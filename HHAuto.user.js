@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HaremHeroes Automatic++ Beta
 // @namespace    https://github.com/Roukys/HHauto
-// @version      5.5-beta.1
+// @version      5.5-beta.2
 // @description  Open the menu in HaremHeroes(topright) to toggle AutoControlls. Supports AutoSalary, AutoContest, AutoMission, AutoQuest, AutoTrollBattle, AutoArenaBattle and AutoPachinko(Free), AutoLeagues, AutoChampions and AutoStatUpgrades. Messages are printed in local console.
 // @author       JD and Dorten(a bit), Roukys, cossname, YotoTheOne
 // //@match        http*://nutaku.haremheroes.com/*
@@ -765,6 +765,9 @@ function gotoPage(page,inArgs,delay = -1)
             break;
         case "troll-pre-battle" :
             togoto = "/troll-pre-battle.html";
+            break;
+        case "event" :
+            togoto = "/event.html";
             break;
         case "clubs" :
             togoto = $("nav div[rel='content'] a:has(.clubs)").attr("href");
@@ -2154,14 +2157,14 @@ var doBossBattle = function()
     }
 
     var TTF;
-    if (Storage().HHAuto_Setting_plusEvent==="true" && !checkTimer("eventGoing") && sessionStorage.HHAuto_Temp_eventTroll && sessionStorage.HHAuto_Temp_eventTrollIsMythic==="false")
+    if (Storage().HHAuto_Setting_plusEvent==="true" && !checkTimer("eventGoing") && sessionStorage.HHAuto_Temp_eventGirl && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic==="false")
     {
-        TTF=sessionStorage.HHAuto_Temp_eventTroll;
+        TTF=JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).troll_id;
         logHHAuto("Event troll fight");
     }
-    else if (Storage().HHAuto_Setting_plusEventMythic==="true" && !checkTimer("eventMythicGoing") && sessionStorage.HHAuto_Temp_eventTroll && sessionStorage.HHAuto_Temp_eventTrollIsMythic==="true")
+    else if (Storage().HHAuto_Setting_plusEventMythic==="true" && !checkTimer("eventMythicGoing") && sessionStorage.HHAuto_Temp_eventGirl && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic==="true")
     {
-        TTF=sessionStorage.HHAuto_Temp_eventTroll;
+        TTF=JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).troll_id;
         logHHAuto("Mythic Event troll fight");
     }
     else if(sessionStorage.HHAuto_Temp_trollToFight !== undefined && !isNaN(sessionStorage.HHAuto_Temp_trollToFight) && sessionStorage.HHAuto_Temp_trollToFight !== "0")
@@ -2195,7 +2198,7 @@ var doBossBattle = function()
         //         if(Storage().HHAuto_Setting_buyMythicCombat=="true"
         //            &&  Storage().HHAuto_Setting_plusEventMythic==="true"
         //            && sessionStorage.HHAuto_Temp_eventTroll
-        //            && sessionStorage.HHAuto_Temp_eventTrollIsMythic==="true")
+        //            && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic==="true")
         //         {
         //             CrushThem();//RechargeAndPlay();
         //         }
@@ -3640,6 +3643,7 @@ var CrushThemFights=function()
         let queryString = window.location.search;
         let urlParams = new URLSearchParams(queryString);
         let TTF = urlParams.get('id_opponent');
+
         let battleButton = $('#pre-battle .battle-buttons a.green_button_L.battle-action-button');
         let battleButtonX10 = $('#pre-battle .battle-buttons button.autofight[data-battles="10"]');
         let battleButtonX50 = $('#pre-battle .battle-buttons button.autofight[data-battles="50"]');
@@ -3650,18 +3654,29 @@ var CrushThemFights=function()
         let remainingShards;
         let currentPower = Number(getSetHeroInfos('fight.amount'));
 
-
-        if (sessionStorage.HHAuto_Temp_eventTrollShards && Number.isInteger(Number(sessionStorage.HHAuto_Temp_eventTrollShards)) && battleButtonX10.length > 0 && battleButtonX50.length > 0)
+        //check if girl still available at troll in case of event
+        if (sessionStorage.HHAuto_Temp_eventGirl)
         {
-            remainingShards = Number(100 - Number(sessionStorage.HHAuto_Temp_eventTrollShards));
+            let rewardGirlz=$("#pre-battle #opponent-panel .fighter-rewards .rewards_list .girls_reward[data-rewards]");
+
+            if (rewardGirlz.length ===0 || !rewardGirlz.attr('data-rewards').includes('"id_girl":"'+JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_id+'"'))
+            {
+                logHHAuto("Seems "+JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_name+" is no more available at troll "+Trollz[Number(TTF)]+". Going to event page.");
+                parseEventPage();
+                return;
+            }
+        }
+
+        if (sessionStorage.HHAuto_Temp_eventGirl && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards && Number.isInteger(Number(JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards)) && battleButtonX10.length > 0 && battleButtonX50.length > 0)
+        {
+            remainingShards = Number(100 - Number(JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards));
             let bypassThreshold = (
-                (sessionStorage.HHAuto_Temp_eventTroll
-                 && sessionStorage.HHAuto_Temp_eventTrollIsMythic === "false"
+                (JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic === "false"
                  && Storage().HHAuto_Setting_buyCombat=="true"
                  && Storage().HHAuto_Setting_plusEvent==="true"
                  && sessionStorage.HHAuto_Temp_EventInBuyCombTime === "true"
                 ) // eventGirl available and buy comb true
-                || (sessionStorage.HHAuto_Temp_eventTrollIsMythic === "true"
+                || (JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic === "true"
                     && Storage().HHAuto_Setting_plusEventMythic==="true"
                    )
             );
@@ -3686,12 +3701,13 @@ var CrushThemFights=function()
                 };
                 battleButtonX50[0].click();
                 hero.infos.hc_confirm = hcConfirmValue;
+                sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh = Number(sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh) - 50;
                 logHHAuto("Crushed 50 times: "+Trollz[Number(TTF)]+' for '+battleButtonX50Price+' kobans.');
                 if (sessionStorage.HHAuto_Temp_questRequirement === "battle") {
                     // Battle Done.
                     sessionStorage.HHAuto_Temp_questRequirement = "none";
                 }
-                gotoPage('home');
+                ObserveAndGetGirlRewards();
                 return;
             }
             else
@@ -3722,12 +3738,13 @@ var CrushThemFights=function()
                 };
                 battleButtonX10[0].click();
                 hero.infos.hc_confirm = hcConfirmValue;
+                sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh = Number(sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh) - 10;
                 logHHAuto("Crushed 10 times: "+Trollz[Number(TTF)]+' for '+battleButtonX10Price+' kobans.');
                 if (sessionStorage.HHAuto_Temp_questRequirement === "battle") {
                     // Battle Done.
                     sessionStorage.HHAuto_Temp_questRequirement = "none";
                 }
-                gotoPage('home');
+                ObserveAndGetGirlRewards();
                 return;
             }
             else
@@ -3740,13 +3757,17 @@ var CrushThemFights=function()
         }
 
         //Crushing one by one
-            if(battleButton === undefined || battleButton.length === 0){
+        if(battleButton === undefined || battleButton.length === 0){
             logHHAuto("Battle Button was undefined. Disabling all auto-battle.");
             document.getElementById("autoTrollCheckbox").checked = false;
+            Storage().HHAuto_Setting_autoTrollBattle = "false"
+
             //document.getElementById("autoArenaCheckbox").checked = false;
             if (sessionStorage.HHAuto_Temp_questRequirement === "battle")
             {
                 document.getElementById("autoQuestCheckbox").checked = false;
+                Storage().HHAuto_Setting_autoQuest= "false";
+
                 logHHAuto("Auto-quest disabled since it requires battle and auto-battle has errors.");
             }
             return;
@@ -3760,6 +3781,10 @@ var CrushThemFights=function()
                 return false;
             };
             battleButton[0].click();
+            if (sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh)
+            {
+                sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh = Number(sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh) - 1;
+            }
         }
         else
         {
@@ -3771,17 +3796,29 @@ var CrushThemFights=function()
             return;
         }
     }
-    else if (getPage() === "battle" )
+    else
+    {
+        logHHAuto('Unable to identify page.');
+        gotoPage("home");
+        return;
+    }
+    return;
+}
+
+function doBattle()
+{
+    if (getPage() === "battle" )
     {
         logHHAuto("On battle page.");
-        if ($("#rewards_popup .blue_text_button").size()>0)
+        /*if ($("#rewards_popup .blue_text_button").size()>0)
         {
             $("#rewards_popup .blue_text_button").click();
         }
         if ($("#rewards_popup .blue_button_L").size()>0)
         {
             $("#rewards_popup .blue_button_L").click();
-        }
+        }*/
+
         let queryString = window.location.search;
         let urlParams = new URLSearchParams(queryString);
         let league_battle = urlParams.get('league_battle');
@@ -3790,9 +3827,27 @@ var CrushThemFights=function()
             logHHAuto("Reloading after league fight.");
             gotoPage("leaderboard",{},randomInterval(4000,5000));
         }
+        else if (window.location.pathname === "/troll-battle.html")
+        {
+            if(sessionStorage.HHAuto_Temp_eventGirl)
+            {
+                ObserveAndGetGirlRewards();
+            }
+            else
+            {
+                logHHAuto("Go to home after Troll fight.");
+                gotoPage('home',{},randomInterval(2000,4000));
+            }
+
+        }
+        else if (window.location.pathname === "/season-battle.html")
+        {
+            logHHAuto("Go to home after Season fight.");
+            gotoPage('home',{},randomInterval(2000,4000));
+        }
         else
         {
-            logHHAuto("Go to home after Troll fight.");
+            logHHAuto("Go to home after battle fight.");
             gotoPage('home',{},randomInterval(2000,4000));
         }
         return true;
@@ -3803,7 +3858,79 @@ var CrushThemFights=function()
         gotoPage("home");
         return;
     }
-    return;
+}
+
+function ObserveAndGetGirlRewards()
+{
+    sessionStorage.HHAuto_Temp_autoLoop = "false";
+    logHHAuto("setting autoloop to false to wait for troll rewards");
+    let inCaseTimer = setTimeout(function(){gotoPage('home');}, 60000); //in case of issue
+    let observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            let eventsGirlz = JSON.parse(sessionStorage.HHAuto_Temp_eventsGirlz);
+            let eventGirl = JSON.parse(sessionStorage.HHAuto_Temp_eventGirl);
+            let TTF = eventGirl.troll_id;
+            if ($('#rewards_popup #reward_holder .shards_wrapper').length === 0)
+            {
+                clearTimeout(inCaseTimer);
+                logHHAuto("No girl in reward going back to Troll");
+                gotoPage("troll-pre-battle",{id_opponent:TTF});
+                return;
+            }
+            let renewEvent = false;
+            let girlShardsWon = $('.shards_wrapper .shards_girl_ico');
+            logHHAuto("Detected girl shard reward");
+            for (var currGirl=0; currGirl <= girlShardsWon.length; currGirl++)
+            {
+                let GirlIdSrc = $("img",girlShardsWon[currGirl]).attr("src");
+                let GirlId = GirlIdSrc.split('/')[5];
+                let GirlShards = Math.min(Number($('.shards[shards]', girlShardsWon[currGirl]).attr('shards')),100);
+                if (eventsGirlz.length >0)
+                {
+                    let GirlIndex = eventsGirlz.findIndex((element) =>element.girl_id === GirlId);
+                    if (GirlIndex !==-1)
+                    {
+                        eventsGirlz[GirlIndex].girl_shards = GirlShards.toString();
+                        if (GirlShards === 100)
+                        {
+                            renewEvent = true;
+                        }
+                    }
+                }
+                if (eventGirl.girl_id === GirlId)
+                {
+                    eventGirl.girl_shards = GirlShards.toString();
+                    if (GirlShards === 100)
+                    {
+                        renewEvent = true;
+                    }
+                }
+            }
+            sessionStorage.HHAuto_Temp_eventsGirlz = JSON.stringify(eventsGirlz);
+            sessionStorage.HHAuto_Temp_eventGirl = JSON.stringify(eventGirl);
+            if (renewEvent || Number(sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh) < 1 || checkTimerMustExist('eventRefreshExpiration'))
+            {
+                clearTimeout(inCaseTimer);
+                logHHAuto("Need to check back event page");
+                parseEventPage();
+                return;
+            }
+            else
+            {
+                clearTimeout(inCaseTimer);
+                logHHAuto("Go back to troll after troll fight.");
+                gotoPage("troll-pre-battle",{id_opponent:TTF});
+                return;
+            }
+        })
+    })
+
+    observer.observe($('#reward_holder .container .scrolling_area')[0], {
+        childList: true
+        , subtree: true
+        , attributes: false
+        , characterData: false
+    });
 }
 
 var  CrushThem = function()
@@ -3832,10 +3959,12 @@ var  CrushThem = function()
             if(battleButton === undefined){
                 logHHAuto("Battle Button was undefined. Disabling all auto-battle.");
                 document.getElementById("autoTrollCheckbox").checked = false;
+                Storage().HHAuto_Setting_autoTrollBattle = "false"
                 //document.getElementById("autoArenaCheckbox").checked = false;
                 if (sessionStorage.HHAuto_Temp_questRequirement === "battle")
                 {
                     document.getElementById("autoQuestCheckbox").checked = false;
+                    Storage().HHAuto_Setting_autoQuest= "false";
                     logHHAuto("Auto-quest disabled since it requires battle and auto-battle has errors.");
                 }
                 return;
@@ -3854,6 +3983,7 @@ var  CrushThem = function()
                 if (sessionStorage.HHAuto_Temp_questRequirement === "battle")
                 {
                     document.getElementById("autoQuestCheckbox").checked = false;
+                    Storage().HHAuto_Setting_autoQuest= "false";
                     logHHAuto("Auto-quest disabled since it requires battle and auto-battle has errors.");
                 }
                 return;
@@ -3926,6 +4056,19 @@ var checkTimer=function(name)
     if (!Timers[name])
     {
         return true;
+    }
+    if (Timers[name]<new Date())
+    {
+        return true;
+    }
+    return false;
+}
+
+var checkTimerMustExist=function(name)
+{
+    if (!Timers[name])
+    {
+        return false;
     }
     if (Timers[name]<new Date())
     {
@@ -4367,7 +4510,7 @@ var flipParanoia=function()
         }
 
         //bypass Paranoia if ongoing mythic
-        if (Storage().HHAuto_Setting_autoTrollMythicByPassParanoia === "true" && sessionStorage.HHAuto_Temp_eventTrollIsMythic==="true")
+        if (Storage().HHAuto_Setting_autoTrollMythicByPassParanoia === "true" && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic==="true")
         {
             //             var trollThreshold = Number(Storage().HHAuto_Setting_autoTrollThreshold);
             //             if (Storage().HHAuto_Setting_buyMythicCombat === "true" || Storage().HHAuto_Setting_autoTrollMythicByPassThreshold === "true")
@@ -5716,11 +5859,41 @@ var autoLoop = function () {
         CheckSpentPoints();
 
         //check what happen to timer if no more wave before uncommenting
-        /*if (Storage().HHAuto_Setting_plusEventMythic==="true" && checkTimer('eventMythicNextWave'))
+        /*if (Storage().HHAuto_Setting_plusEventMythic==="true" && checkTimerMustExist('eventMythicNextWave'))
         {
             gotoPage('home');
         }
         */
+
+        //if a new event is detected
+        if(busy === false &&
+           ((getPage() === "home" && $('#contains_all #homepage .event-widget a[rel="event"]').length >0) || (getPage()==="event" && $("#contains_all #events .nc-event-container[parsed]").length === 0))
+           && (checkTimer('eventGoing') || checkTimer('eventMythicGoing'))
+           && ( sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh === undefined || getTimer('eventRefreshExpiration') === -1 || sessionStorage.HHAuto_Temp_eventGirl === undefined)
+           && ( Storage().HHAuto_Setting_plusEvent==="true" || Storage().HHAuto_Setting_plusEventMythic==="true")
+          )
+        {
+            logHHAuto("Going to check on new events.");
+            busy = true;
+            busy = parseEventPage();
+        }
+
+        //if need to recheck event
+        if(busy === false
+           && (Number(sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh) < 1 || checkTimerMustExist('eventRefreshExpiration') || (getPage()==="event" && $("#contains_all #events .nc-event-container[parsed]").length === 0))
+           && ( Storage().HHAuto_Setting_plusEvent==="true" || Storage().HHAuto_Setting_plusEventMythic==="true")
+          )
+        {
+            logHHAuto("Going to check on ongoing events.");
+            busy = true;
+            busy = parseEventPage();
+        }
+
+        if(busy === false && getPage()==="battle")
+        {
+            busy = true;
+            doBattle();
+        }
 
         if(Storage().HHAuto_Setting_autoTrollBattle === "true" && getSetHeroInfos('questing.id_world')>0 && sessionStorage.HHAuto_Temp_autoLoop === "true")
         {
@@ -5729,13 +5902,14 @@ var autoLoop = function () {
                 //logHHAuto("fight amount: "+currentPower+" troll threshold: "+Number(Storage().HHAuto_Setting_autoTrollThreshold)+" paranoia fight: "+Number(checkParanoiaSpendings('fight')));
                 if (Number(currentPower) > Number(Storage().HHAuto_Setting_autoTrollThreshold) //fight is above threshold
                     || Number(checkParanoiaSpendings('fight')) > 0 //paranoiaspendings to do
-                    || (sessionStorage.HHAuto_Temp_eventTroll
-                        && sessionStorage.HHAuto_Temp_eventTrollIsMythic === "false"
+                    || (sessionStorage.HHAuto_Temp_eventGirl
+                        && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic === "false"
                         && Storage().HHAuto_Setting_buyCombat=="true"
                         && Storage().HHAuto_Setting_plusEvent==="true"
                         && sessionStorage.HHAuto_Temp_EventInBuyCombTime === "true"
                        ) // eventGirl available and buy comb true
-                    || (sessionStorage.HHAuto_Temp_eventTrollIsMythic === "true"
+                    || (sessionStorage.HHAuto_Temp_eventGirl
+                        && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic === "true"
                         && Storage().HHAuto_Setting_plusEventMythic==="true"
                        ) // mythicEventGirl available and fights available
                    )
@@ -6068,9 +6242,9 @@ var autoLoop = function () {
         {
             sessionStorage.HHAuto_Temp_userLink = page;
         }
-        else if(sessionStorage.HHAuto_Temp_userLink !=="none" && busy === false  && sessionStorage.HHAuto_Temp_autoLoop === "true")
+        else if(sessionStorage.HHAuto_Temp_userLink !=="none" && busy === false && sessionStorage.HHAuto_Temp_autoLoop === "true")
         {
-            //logHHAuto("Restoring page "+sessionStorage.HHAuto_Temp_userLink);
+            logHHAuto("Back to home page at the end of actions");
             //window.location = sessionStorage.HHAuto_Temp_userLink;
             gotoPage('home');
             sessionStorage.HHAuto_Temp_userLink = "none";
@@ -6100,8 +6274,9 @@ var autoLoop = function () {
     {
         moduleSimSeasonReward();
     }
-    if (getPage() === "home" && $("div.event-widget div.widget[style='display: block;']").length !== 0)
+    if (getPage() === "event")
     {
+        parseEventPage();
         moduleDisplayEventPriority();
     }
     if (getPage() === "powerplacemain" )
@@ -7494,19 +7669,19 @@ var moduleDisplayEventPriority=function()
     {
         var girl;
         var prio;
-        var query="div.event-widget div.widget[style='display: block;'] div.container div.scroll-area div.rewards-block-tape div.girl_reward";
+        var baseQuery="#events .nc-event-container .scroll-area .nc-event-list-rewards-container .nc-event-list-reward";
         var idArray;
         var currentGirl;
         for ( var e=eventGirlz.length;e>0;e--)
         {
             idArray = Number(e)-1;
-            girl = Number(eventGirlz[idArray].split(";")[2]);
-            query="div.event-widget div.widget[style='display: block;'] div.container div.scroll-area div.rewards-block-tape div.girl_reward[girl="+girl+"]";
+            girl = Number(eventGirlz[idArray].girl_id);
+            let query=baseQuery+"[data-select-girl-id="+girl+"]";
             if ($(query).length >0 )
             {
-                currentGirl=$(query)[0];
+                currentGirl=$(query).parent()[0];
                 $(query).prepend('<div class="HHEventPriority">'+e+'</div>');
-                $($(query)).parent()[0].prepend(currentGirl);
+                $($(query)).parent().parent()[0].prepend(currentGirl);
             }
         }
     }
@@ -7516,17 +7691,163 @@ var moduleDisplayEventPriority=function()
 var clearEventData=function()
 {
     sessionStorage.removeItem('HHAuto_Temp_eventsGirlz');
-    sessionStorage.removeItem('HHAuto_Temp_eventTroll');
-    sessionStorage.removeItem('HHAuto_Temp_eventTrollShards');
-    sessionStorage.HHAuto_Temp_eventTrollIsMythic="false";
+    sessionStorage.removeItem('HHAuto_Temp_eventGirl');
     sessionStorage.HHAuto_Temp_EventInBuyCombTime = "false";
     sessionStorage.HHAuto_Temp_MythicEventInBuyCombTime = "false";
+    clearTimer('eventMythicNextWave');
+    clearTimer('eventRefreshExpiration');
+    sessionStorage.removeItem('HHAuto_Temp_EventFightsBeforeRefresh');
 }
 
+function parseEventPage()
+{
+    if(getPage() === "event" )
+    {
+
+        let queryEventTabCheck=$("#contains_all #events .nc-event-container");
+        if (queryEventTabCheck.attr('parsed') !== undefined)
+        {
+            if (!checkTimerMustExist('eventRefreshExpiration'))
+            {
+                //logHHAuto("Events already parsed.");
+                return false;
+            }
+        }
+        logHHAuto("On event page.");
+        clearEventData();
+        let eventsGirlz=[];
+        let Priority=(Storage().HHAuto_Setting_eventTrollOrder?Storage().HHAuto_Setting_eventTrollOrder:"").split(";");
+        let eventHref = $("#contains_all #events .events-list .event-title.active").attr("href");
+        let parsedURL = new URL(eventHref,window.location.origin);
+        let urlParams = new URLSearchParams(parsedURL.search);
+        let eventID = urlParams.get('tab');
+
+        if (eventID.startsWith("event_"))
+        {
+            logHHAuto("On going event.");
+            let timeLeft=$('#contains_all #events .nc-expiration-label#timer').attr("data-seconds-until-event-end");
+            setTimer('eventGoing',timeLeft);
+            let allEventGirlz = $('#contains_all #events .nc-panel-body .nc-event-container .nc-event-reward-container');
+            for (let currIndex = 0;currIndex<allEventGirlz.length;currIndex++)
+            {
+                let element = allEventGirlz[currIndex];
+                let button = $('.nc-events-prize-locations-buttons-container a:not(.disabled)[href^="/troll-pre-battle.html"]', element);
+                if (button.length > 0)
+                {
+                    let buttonHref = button.attr("href");
+                    let girlId = element.getAttribute("data-reward-girl-id");
+                    let girlName = $('.shards_bar_wrapper .shards[shards]',element).attr('name');
+                    parsedURL = new URL(buttonHref,window.location.origin);
+                    urlParams = new URLSearchParams(parsedURL.search);
+                    let TrollID = urlParams.get('id_opponent');
+                    let girlShards = $('.shards_bar_wrapper .shards[shards]',element).attr('shards');
+                    logHHAuto("Event girl : "+girlName+" ("+girlShards+"/100) at troll "+TrollID+" priority : "+Priority.indexOf(TrollID));
+                    eventsGirlz.push({girl_id:girlId,troll_id:TrollID,girl_shards:girlShards,is_mythic:"false",girl_name:girlName});
+                }
+            }
+        }
+        eventsGirlz = eventsGirlz.filter(function (a) {
+            var a_weighted = Number(Priority.indexOf(a.troll_id));
+            if ( a.event_type === "mythic_event" )
+            {
+                return true;
+            }
+            else
+            {
+                return a_weighted !== -1;
+            }
+        });
+        if (eventsGirlz.length>0)
+        {
+            if (Priority[0]!=='')
+            {
+                eventsGirlz.sort(function (a, b) {
+                    var a_weighted = Number(Priority.indexOf(a.troll_id));
+                    if ( a.event_type === "mythic_event" )
+                    {
+                        a_weighted=a_weighted/10;
+                    }
+                    var b_weighted = Number(Priority.indexOf(b.troll_id));
+                    if ( b.event_type === "mythic_event" )
+                    {
+                        b_weighted=b_weighted/10;
+                    }
+                    return a_weighted-b_weighted;
+
+                });
+                //logHHAuto({log:"Sorted EventGirls",eventGirlz:eventsGirlz});
+            }
+            sessionStorage.HHAuto_Temp_eventsGirlz = JSON.stringify(eventsGirlz);
+            var chosenTroll = Number(eventsGirlz[0].troll_id)
+            logHHAuto("ET: "+chosenTroll);
+            sessionStorage.HHAuto_Temp_eventGirl=JSON.stringify(eventsGirlz[0]);
+            queryEventTabCheck[0].setAttribute('parsed', 'true');
+            sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh = "30";
+            setTimer('eventRefreshExpiration', 3600);
+        }
+        else
+        {
+            clearEventData();
+        }
+
+        var hero=getHero();
+        //buy comb
+        if (Storage().HHAuto_Setting_buyCombat=="true" && Storage().HHAuto_Setting_plusEvent==="true" )
+        {
+            //logHHAuto('WTF!');
+            var diff=Math.ceil(Timers["eventGoing"]/1000)-Math.ceil(new Date().getTime()/1000);
+            //logHHAuto(diff);
+            if (diff<Storage().HHAuto_Setting_buyCombTimer*3600)
+            {
+                sessionStorage.HHAuto_Temp_EventInBuyCombTime = "true";
+            }
+            hero=getHero();
+            if (
+                sessionStorage.HHAuto_Temp_EventInBuyCombTime === "true"
+                && sessionStorage.HHAuto_Temp_eventGirl
+                && getSetHeroInfos('fight.amount')==0
+                && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic==="false"
+            )
+            {
+                RechargeCombat();
+            }
+        }
+
+        //buy comb mythic
+        if (Storage().HHAuto_Setting_buyMythicCombat=="true" &&  Storage().HHAuto_Setting_plusEventMythic==="true")
+        {
+            //logHHAuto('WTF!');
+            var diffMythic=Math.ceil(Timers["eventMythicGoing"]/1000)-Math.ceil(new Date().getTime()/1000);
+
+            if (diffMythic<Storage().HHAuto_Setting_buyMythicCombTimer*3600)
+            {
+                sessionStorage.HHAuto_Temp_MythicEventInBuyCombTime = "true";
+            }
+            hero=getHero();
+            if (
+                sessionStorage.HHAuto_Temp_MythicEventInBuyCombTime === "true"
+                && sessionStorage.HHAuto_Temp_eventGirl
+                && getSetHeroInfos('fight.amount')==0
+                && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic==="true"
+            )
+            {
+                RechargeCombat();
+            }
+        }
+
+        return false;
+    }
+    else
+    {
+        gotoPage("event");
+        return true;
+    }
+}
+
+/*
 var CollectEventData=function()
 {
     if(getPage()!=="home") return false;
-    clearTimer('eventMythicNextWave');
     clearEventData();
     if (unsafeWindow.event_data || unsafeWindow.mythic_event_data)
     {
@@ -7640,16 +7961,8 @@ var CollectEventData=function()
             sessionStorage.HHAuto_Temp_eventsGirlz = JSON.stringify(eventsGirlz);
             var chosenTroll = Number(eventsGirlz[0].split(";")[3])
             logHHAuto("ET: "+chosenTroll);
-            if ( eventsGirlz[0].split(";")[0] === "mythic_event" )
-            {
-                sessionStorage.HHAuto_Temp_eventTrollIsMythic="true";
-            }
-            else
-            {
-                sessionStorage.HHAuto_Temp_eventTrollIsMythic="false";
-            }
             sessionStorage.HHAuto_Temp_eventTroll=chosenTroll;
-            sessionStorage.HHAuto_Temp_eventTrollShards=Number(eventsGirlz[0].split(";")[4]);
+            JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards=Number(eventsGirlz[0].split(";")[4]);
         }
         else
         {
@@ -7673,7 +7986,7 @@ var CollectEventData=function()
                 sessionStorage.HHAuto_Temp_EventInBuyCombTime === "true"
                 && sessionStorage.HHAuto_Temp_eventTroll
                 && getSetHeroInfos('fight.amount')==0
-                && sessionStorage.HHAuto_Temp_eventTrollIsMythic==="false"
+                && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic==="false"
             )
             {
                 //price=hero.get_recharge_cost("fight");
@@ -7702,7 +8015,7 @@ var CollectEventData=function()
                 sessionStorage.HHAuto_Temp_MythicEventInBuyCombTime === "true"
                 && sessionStorage.HHAuto_Temp_eventTroll
                 && getSetHeroInfos('fight.amount')==0
-                && sessionStorage.HHAuto_Temp_eventTrollIsMythic==="true"
+                && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic==="true"
             )
             {
                 //                 price=hero.get_recharge_cost("fight");
@@ -7721,7 +8034,7 @@ var CollectEventData=function()
     logHHAuto('no  event');
     return false;
 }
-
+*/
 
 // var playXTimes=function(battlesAmount,who)
 // {
@@ -7780,17 +8093,16 @@ var RechargeCombat=function()
     let canUsex50 = false;
     let remainingShards;
 
-    if (sessionStorage.HHAuto_Temp_eventTrollShards && Number.isInteger(Number(sessionStorage.HHAuto_Temp_eventTrollShards)))
+    if (sessionStorage.HHAuto_Temp_eventGirl && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards && Number.isInteger(Number(JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards)))
     {
-        remainingShards = Number(100 - Number(sessionStorage.HHAuto_Temp_eventTrollShards));
+        remainingShards = Number(100 - Number(JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards));
     }
     else
     {
         logHHAuto("Unable to retreive Event girl shards, stops buying.");
         return;
     }
-    if (sessionStorage.HHAuto_Temp_eventTrollShards && Number.isInteger(Number(sessionStorage.HHAuto_Temp_eventTrollShards))
-        && Storage().HHAuto_Setting_minShardsX50
+    if (Storage().HHAuto_Setting_minShardsX50
         && Number.isInteger(Number(Storage().HHAuto_Setting_minShardsX50))
         && remainingShards >= Number(Storage().HHAuto_Setting_minShardsX50)
         && getSetHeroInfos('hard_currency')>=pricex50+Number(Storage().HHAuto_Setting_kobanBank)
@@ -8764,8 +9076,7 @@ var HHVars_Temp=[
     "sessionStorage.HHAuto_Temp_burst",
     "sessionStorage.HHAuto_Temp_charLevel",
     "sessionStorage.HHAuto_Temp_eventsGirlz",
-    "sessionStorage.HHAuto_Temp_eventTroll",
-    "sessionStorage.HHAuto_Temp_eventTrollIsMythic",
+    "sessionStorage.HHAuto_Temp_eventGirl",
     "sessionStorage.HHAuto_Temp_fought",
     "Storage().HHAuto_Temp_freshStart",
     "sessionStorage.HHAuto_Temp_haveAff",
@@ -8793,7 +9104,7 @@ var HHVars_Temp=[
     "sessionStorage.HHAuto_Temp_CheckSpentPoints",
     "sessionStorage.HHAuto_Temp_MythicEventInBuyCombTime",
     "sessionStorage.HHAuto_Temp_EventInBuyCombTime",
-    "sessionStorage.HHAuto_Temp_eventTrollShards"];
+    "sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh"];
 
 
 var updateData = function () {
@@ -10031,11 +10342,11 @@ var start = function () {
         }
     }
 
-    if (!CollectEventData())
+    /*if (!CollectEventData())
     {
         setTimeout(function(){CollectEventData();},5000);
     }
-
+*/
 
     if (hh_nutaku)
     {
