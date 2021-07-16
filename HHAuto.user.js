@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HaremHeroes Automatic++ Beta Prod
 // @namespace    https://github.com/Roukys/HHauto
-// @version      5.5-beta.3
+// @version      5.5-beta.4
 // @description  Open the menu in HaremHeroes(topright) to toggle AutoControlls. Supports AutoSalary, AutoContest, AutoMission, AutoQuest, AutoTrollBattle, AutoArenaBattle and AutoPachinko(Free), AutoLeagues, AutoChampions and AutoStatUpgrades. Messages are printed in local console.
 // @author       JD and Dorten(a bit), Roukys, cossname, YotoTheOne
 // @match        http*://nutaku.haremheroes.com/*
@@ -5043,34 +5043,27 @@ function moduleSimLeague() {
         matchRatingFlag = matchRating.substring(0,1);
         matchRating = matchRating.substring(1);
 
-        /*switch (matchRatingFlag)
-        {
-            case 'g':
-                $('div#leagues_right .player_block .challenge').prepend('<div class="matchRatingNew plus"><img id="powerLevelScouter" src="https://i.postimg.cc/qgkpN0sZ/Opponent-green.png">' + matchRating + '</div>');
-                $("tr.lead_table_default div[second-row]").append('<div class="matchRatingNew plus"><img id="powerLevelScouter" src="https://i.postimg.cc/qgkpN0sZ/Opponent-green.png">' + matchRating + '</div>');
-                break;
-            case 'y':
-                $('div#leagues_right .player_block .challenge').prepend('<div class="matchRatingNew close"><img id="powerLevelScouter" src="https://i.postimg.cc/3JCgVBdK/Opponent-orange.png">' + matchRating + '</div>');
-                $("tr.lead_table_default div[second-row]").append('<div class="matchRatingNew close"><img id="powerLevelScouter" src="https://i.postimg.cc/3JCgVBdK/Opponent-orange.png">' + matchRating + '</div>');
-                break;
-            case 'r':
-                $('div#leagues_right .player_block .challenge').prepend('<div class="matchRatingNew minus"><img id="powerLevelScouter" src="https://i.postimg.cc/PxgxrBVB/Opponent-red.png">' + matchRating + '</div>');
-                $("tr.lead_table_default div[second-row]").append('<div class="matchRatingNew minus"><img id="powerLevelScouter" src="https://i.postimg.cc/PxgxrBVB/Opponent-red.png">' + matchRating + '</div>');
-                break;
-        }*/
-        
         switch (matchRatingFlag)
         {
             case 'g':
+                //week 28 new battle modification inverted
                 $('div#leagues_right .girls_wrapper').append('<div class="matchRatingNew plus"><img id="powerLevelScouter" src="https://i.postimg.cc/qgkpN0sZ/Opponent-green.png">' + matchRating + '</div>');
+                //$('div#leagues_right .player_block .challenge').prepend('<div class="matchRatingNew plus"><img id="powerLevelScouter" src="https://i.postimg.cc/qgkpN0sZ/Opponent-green.png">' + matchRating + '</div>');
+                //End week 28 new battle modification
                 $("tr.lead_table_default div[second-row]").append('<div class="matchRatingNew plus"><img id="powerLevelScouter" src="https://i.postimg.cc/qgkpN0sZ/Opponent-green.png">' + matchRating + '</div>');
                 break;
             case 'y':
+                //week 28 new battle modification inverted
                 $('div#leagues_right .girls_wrapper').append('<div class="matchRatingNew close"><img id="powerLevelScouter" src="https://i.postimg.cc/3JCgVBdK/Opponent-orange.png">' + matchRating + '</div>');
+                //$('div#leagues_right .player_block .challenge').prepend('<div class="matchRatingNew close"><img id="powerLevelScouter" src="https://i.postimg.cc/3JCgVBdK/Opponent-orange.png">' + matchRating + '</div>');
+                //End week 28 new battle modification
                 $("tr.lead_table_default div[second-row]").append('<div class="matchRatingNew close"><img id="powerLevelScouter" src="https://i.postimg.cc/3JCgVBdK/Opponent-orange.png">' + matchRating + '</div>');
                 break;
             case 'r':
+                //week 28 new battle modification inverted
                 $('div#leagues_right .girls_wrapper').append('<div class="matchRatingNew minus"><img id="powerLevelScouter" src="https://i.postimg.cc/PxgxrBVB/Opponent-red.png">' + matchRating + '</div>');
+                //$('div#leagues_right .player_block .challenge').prepend('<div class="matchRatingNew minus"><img id="powerLevelScouter" src="https://i.postimg.cc/PxgxrBVB/Opponent-red.png">' + matchRating + '</div>');
+                //End week 28 new battle modification
                 $("tr.lead_table_default div[second-row]").append('<div class="matchRatingNew minus"><img id="powerLevelScouter" src="https://i.postimg.cc/PxgxrBVB/Opponent-red.png">' + matchRating + '</div>');
                 break;
         }
@@ -5143,8 +5136,10 @@ function moduleSimLeague() {
     })
     function waitOpnt() {
         setTimeout(function() {
+            //week 28 new battle modification inverted
             //if (JSON.parse($('div#leagues_right .player_block .team-hexagon-container .team-member-container[data-team-member-position=0] img').attr(girlDataName)))
             if (JSON.parse($('div#leagues_right .girls_wrapper .team_girl[g=3]').attr(girlDataName)))
+            //End week 28 new battle modification inverted
             {
                 SimPower();
             }
