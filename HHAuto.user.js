@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HaremHeroes Automatic++ Beta
 // @namespace    https://github.com/Roukys/HHauto
-// @version      5.5-beta.3
+// @version      5.5-beta.4
 // @description  Open the menu in HaremHeroes(topright) to toggle AutoControlls. Supports AutoSalary, AutoContest, AutoMission, AutoQuest, AutoTrollBattle, AutoArenaBattle and AutoPachinko(Free), AutoLeagues, AutoChampions and AutoStatUpgrades. Messages are printed in local console.
 // @author       JD and Dorten(a bit), Roukys, cossname, YotoTheOne
 // //@match        http*://nutaku.haremheroes.com/*
@@ -2465,7 +2465,7 @@ function nRounding(num, digits, updown) {
     }
 }
 
-
+/*
 function simuFight(player, opponent) {
     let playerEgoCheck = 0;
 
@@ -2526,15 +2526,15 @@ function simuFight(player, opponent) {
         o.ego -= Math.max(0, Math.floor(cur.atk * 1.5 - o.def));
 
         //CH Bug
-        /*if(cur === player && opponentAlphaClass == CH) {
-            if(cur.orgasmCount > 1) {
-                let carac_add = cur.team[cur.orgasmCount+1-1];
-                let added_atk = Math.floor(carac_add * 1.3);
-                opponent.ego += added_atk * 0.5 / 2;
-            } else {
-                opponent.ego += cur.atk * 0.5 / 2;
-            }
-        }*/
+//         if(cur === player && opponentAlphaClass == CH) {
+//             if(cur.orgasmCount > 1) {
+//                 let carac_add = cur.team[cur.orgasmCount+1-1];
+//                 let added_atk = Math.floor(carac_add * 1.3);
+//                 opponent.ego += added_atk * 0.5 / 2;
+//             } else {
+//                 opponent.ego += cur.atk * 0.5 / 2;
+//             }
+//         }
 
         if(cur.orgasmCount <= 2) {
             let carac_add = cur.team[cur.orgasmCount+1];
@@ -2623,6 +2623,123 @@ function simuFight(player, opponent) {
         pointsInt -= 1/10;
     pointsInt += 1;
     pointsInt = Math.floor(pointsInt);
+
+    let pointsStr = '+' + pointsInt;
+
+    return {
+        score: Math.floor(matchRating),
+        scoreStr: matchRatingStr,
+        scoreClass: matchRatingClass,
+        playerEgoCheck: playerEgoCheck,
+        points: pointsInt,
+        pointsStr: pointsStr
+    };
+}
+*/
+
+//simuFight credit:Tom208
+function simuFight(player, opponent) {
+    let playerEgoCheck = 0;
+    let opponentEgoCheck = 0;
+
+    //Calculate opponent proc values, determine applicable alpha class and adjust starting ego values for proc
+    /*let opponentProcHCAddOrgasm = [
+        0,
+        Math.floor(opponent.atk * 0.25),
+        Math.floor(opponent.team[2] * 1.3 * 0.75),
+        Math.floor(opponent.team[3] * 1.3 * 0.75)
+    ];
+
+    let opponentAlphaClass = parseInt(opponent.alpha.class);
+
+    // crit.
+    if (opponentAlphaClass == HC) {
+        player.ego -= Math.floor(opponent.atk * 0.5);
+    }
+    if (opponentAlphaClass == CH) {
+        //opponent.ego += opponent.def * 2;
+
+        //CH bug
+        opponent.ego += 2 * Math.floor(opponent.atk/2);
+    }
+    if (opponentAlphaClass == KH) {
+        opponent.ego += Math.floor(opponent.ego * 0.1);
+    }*/
+
+    //crit.
+    player.ego -= Math.max(0, opponent.atk - player.def);
+
+    //Log opponent name and starting egos for sim
+    console.log('Simulation log for: ' + opponent.name);
+    console.log('Starting Egos adjusted for the case proc scenario (0 for you and 1 for the opponent):');
+    console.log('Player Ego: ' + player.ego);
+    console.log('Opponent Ego: ' + opponent.ego);
+
+    function play_turn(cur) {
+        let o = cur === player ? opponent : player;
+
+        o.ego -= Math.max(0, cur.atk - o.def);
+        console.log('Round ' + (turns + 1) + ': ' + cur.text + ' hit! -' + Math.max(0, (cur.atk - o.def)));
+
+        //Log results
+        console.log('after Round ' + (turns + 1) + ': ' + o.text + ' ego: ' + o.ego);
+    }
+
+    //Simulate challenge
+    for (var turns = 0; turns < 99; turns++) {
+
+        if( player.ego <= 0) {
+            //Check if defeat stands with 1 critical hit for the player
+            opponentEgoCheck = opponent.ego;
+            opponentEgoCheck -= player.atk - opponent.def;
+
+            if (opponentEgoCheck <= 0)
+                console.log('Victory! With 1 critical hit for player, Opponent ego: ' + opponentEgoCheck);
+
+            player.ego = 0;
+            break;
+        }
+        play_turn(player);
+
+        if (opponent.ego <= 0) {
+            //Check if victory stands with 2 critical hits for the opponent
+            playerEgoCheck = player.ego;
+            playerEgoCheck -= opponent.atk - player.def;
+
+            if (playerEgoCheck <= 0)
+                console.log('Defeat! With 1 more critical hit for opponent, Player ego: ' + playerEgoCheck);
+
+            opponent.ego = 0;
+            break;
+        }
+
+        play_turn(opponent);
+    }
+
+    let matchRating = player.ego - opponent.ego;
+    let matchRatingStr = (matchRating >= 0 ? '+' : '') + nThousand(Math.floor(matchRating));
+    let matchRatingClass;
+    if (matchRating < 0 && opponentEgoCheck <= 0)
+        matchRatingClass = 'close';
+    else if (matchRating < 0 && opponentEgoCheck > 0)
+        matchRatingClass = 'minus';
+    else if (matchRating > 0 && playerEgoCheck <= 0)
+        matchRatingClass = 'close';
+    else if (matchRating > 0 && playerEgoCheck > 0)
+        matchRatingClass = 'plus';
+
+    /*let points = matchRating >= 0 ? Math.min(25, 15+player.ego/player.originEgo*10) : Math.max(3, 3+(opponent.originEgo-opponent.ego)/opponent.originEgo*10);
+    let pointsInt = Math.floor( points * 10 )/10;
+    if( Math.floor( points ) == points )
+        pointsInt -= 1/10;
+    pointsInt += 1;
+    pointsInt = Math.floor(pointsInt);*/
+
+    let pointsInt;
+    if (matchRating >= 0)
+        pointsInt = (player.ego/player.originEgo) > 0.5 ? 25 : 15;
+    else
+        pointsInt = ((opponent.originEgo-opponent.ego)/opponent.originEgo) > 0.5 ? 13 : 3;
 
     let pointsStr = '+' + pointsInt;
 
@@ -7780,7 +7897,7 @@ function parseEventPage()
             logHHAuto("ET: "+chosenTroll);
             sessionStorage.HHAuto_Temp_eventGirl=JSON.stringify(eventsGirlz[0]);
             queryEventTabCheck[0].setAttribute('parsed', 'true');
-            sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh = "30";
+            sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh = "20";
             setTimer('eventRefreshExpiration', 3600);
         }
         else
