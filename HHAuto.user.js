@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HaremHeroes Automatic++ Beta
 // @namespace    https://github.com/Roukys/HHauto
-// @version      5.5-beta.2
+// @version      5.5-beta.3
 // @description  Open the menu in HaremHeroes(topright) to toggle AutoControlls. Supports AutoSalary, AutoContest, AutoMission, AutoQuest, AutoTrollBattle, AutoArenaBattle and AutoPachinko(Free), AutoLeagues, AutoChampions and AutoStatUpgrades. Messages are printed in local console.
 // @author       JD and Dorten(a bit), Roukys, cossname, YotoTheOne
 // //@match        http*://nutaku.haremheroes.com/*
@@ -26,7 +26,7 @@ GM_addStyle('div.optionsRow {display:flex; flex-direction:row; justify-content: 
 GM_addStyle('span.optionsBoxTitle {padding-left:5px}'); //; padding-bottom:2px
 GM_addStyle('div.optionsColumn {display:flex; flex-direction:column; justify-content: space-between}'); //; padding:3px;
 GM_addStyle('div.optionsBoxWithTitle {display:flex; flex-direction:column}');
-GM_addStyle('img.iconImg {max-width:15px; height:15px}');  //; justify-content: center
+GM_addStyle('img.iconImg {max-width:15px; height:15px}');
 GM_addStyle('div.optionsBoxTitle {padding:5px 15px 0px 5px; height:15px; display:flex; flex-direction:row; justify-content:center; align-items:center;}'); //; padding:2px; padding-bottom:0px;
 GM_addStyle('div.rowOptionsBox {margin:3px; padding:3px; font-size:smaller; display:flex; flex-direction:row; align-items:flex-end; border: 1px solid #ffa23e; border-radius: 5px}');
 GM_addStyle('div.optionsBox {margin:3px; padding:3px; font-size:smaller; display:flex; flex-direction:column; border:1px solid #ffa23e; border-radius:5px}');
@@ -2157,12 +2157,12 @@ var doBossBattle = function()
     }
 
     var TTF;
-    if (Storage().HHAuto_Setting_plusEvent==="true" && !checkTimer("eventGoing") && sessionStorage.HHAuto_Temp_eventGirl && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic==="false")
+    if (Storage().HHAuto_Setting_plusEvent==="true" && !checkTimer("eventGoing") && sessionStorage.HHAuto_Temp_eventGirl !== undefined && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic==="false")
     {
         TTF=JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).troll_id;
         logHHAuto("Event troll fight");
     }
-    else if (Storage().HHAuto_Setting_plusEventMythic==="true" && !checkTimer("eventMythicGoing") && sessionStorage.HHAuto_Temp_eventGirl && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic==="true")
+    else if (Storage().HHAuto_Setting_plusEventMythic==="true" && !checkTimer("eventMythicGoing") && sessionStorage.HHAuto_Temp_eventGirl !== undefined && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic==="true")
     {
         TTF=JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).troll_id;
         logHHAuto("Mythic Event troll fight");
@@ -2197,7 +2197,7 @@ var doBossBattle = function()
         CrushThemFights();
         //         if(Storage().HHAuto_Setting_buyMythicCombat=="true"
         //            &&  Storage().HHAuto_Setting_plusEventMythic==="true"
-        //            && sessionStorage.HHAuto_Temp_eventTroll
+        //            && sessionStorage.HHAuto_Temp_eventGirl !== undefined
         //            && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic==="true")
         //         {
         //             CrushThem();//RechargeAndPlay();
@@ -3655,7 +3655,7 @@ var CrushThemFights=function()
         let currentPower = Number(getSetHeroInfos('fight.amount'));
 
         //check if girl still available at troll in case of event
-        if (sessionStorage.HHAuto_Temp_eventGirl)
+        if (sessionStorage.HHAuto_Temp_eventGirl !== undefined)
         {
             let rewardGirlz=$("#pre-battle #opponent-panel .fighter-rewards .rewards_list .girls_reward[data-rewards]");
 
@@ -3667,7 +3667,7 @@ var CrushThemFights=function()
             }
         }
 
-        if (sessionStorage.HHAuto_Temp_eventGirl && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards && Number.isInteger(Number(JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards)) && battleButtonX10.length > 0 && battleButtonX50.length > 0)
+        if (sessionStorage.HHAuto_Temp_eventGirl !== undefined && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards && Number.isInteger(Number(JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards)) && battleButtonX10.length > 0 && battleButtonX50.length > 0)
         {
             remainingShards = Number(100 - Number(JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards));
             let bypassThreshold = (
@@ -3829,7 +3829,7 @@ function doBattle()
         }
         else if (window.location.pathname === "/troll-battle.html")
         {
-            if(sessionStorage.HHAuto_Temp_eventGirl)
+            if(sessionStorage.HHAuto_Temp_eventGirl !== undefined)
             {
                 ObserveAndGetGirlRewards();
             }
@@ -3908,7 +3908,10 @@ function ObserveAndGetGirlRewards()
             }
             sessionStorage.HHAuto_Temp_eventsGirlz = JSON.stringify(eventsGirlz);
             sessionStorage.HHAuto_Temp_eventGirl = JSON.stringify(eventGirl);
-            if (renewEvent || Number(sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh) < 1 || checkTimerMustExist('eventRefreshExpiration'))
+            if (renewEvent
+                || Number(sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh) < 1
+                || checkTimerMustExist('eventRefreshExpiration')
+                || (Number(getSetHeroInfos('fight.amount')) === 0 && Storage().HHAuto_Setting_buyMythicCombat=="true" && Storage().HHAuto_Setting_buyCombat=="true" ) )
             {
                 clearTimeout(inCaseTimer);
                 logHHAuto("Need to check back event page");
@@ -4510,7 +4513,7 @@ var flipParanoia=function()
         }
 
         //bypass Paranoia if ongoing mythic
-        if (Storage().HHAuto_Setting_autoTrollMythicByPassParanoia === "true" && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic==="true")
+        if (Storage().HHAuto_Setting_autoTrollMythicByPassParanoia === "true" && sessionStorage.HHAuto_Temp_eventGirl !==undefined && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic==="true")
         {
             //             var trollThreshold = Number(Storage().HHAuto_Setting_autoTrollThreshold);
             //             if (Storage().HHAuto_Setting_buyMythicCombat === "true" || Storage().HHAuto_Setting_autoTrollMythicByPassThreshold === "true")
@@ -4582,15 +4585,7 @@ var flipParanoia=function()
     setTimer('paranoiaSwitch',toNextSwitch);
     if (sessionStorage.HHAuto_Temp_burst=="true")
     {
-        /*         if (hh_nutaku)
-        {
-            //window.top.postMessage({reloadMe:true},'*');
-            location.reload();
-        }
-        else
-        {
-            window.top.location.reload();
-        } */
+        clearEventData();
         gotoPage('home');
     }
 }
@@ -5880,7 +5875,10 @@ var autoLoop = function () {
 
         //if need to recheck event
         if(busy === false
-           && (Number(sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh) < 1 || checkTimerMustExist('eventRefreshExpiration') || (getPage()==="event" && $("#contains_all #events .nc-event-container[parsed]").length === 0))
+           && (Number(sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh) < 1
+               || checkTimerMustExist('eventRefreshExpiration')
+               || (getPage()==="event" && $("#contains_all #events .nc-event-container[parsed]").length === 0)
+               || (Number(getSetHeroInfos('fight.amount')) === 0 && sessionStorage.HHAuto_Temp_eventGirl !== undefined && ( Storage().HHAuto_Setting_buyMythicCombat==="true" || Storage().HHAuto_Setting_buyCombat==="true" )))
            && ( Storage().HHAuto_Setting_plusEvent==="true" || Storage().HHAuto_Setting_plusEventMythic==="true")
           )
         {
@@ -5902,13 +5900,13 @@ var autoLoop = function () {
                 //logHHAuto("fight amount: "+currentPower+" troll threshold: "+Number(Storage().HHAuto_Setting_autoTrollThreshold)+" paranoia fight: "+Number(checkParanoiaSpendings('fight')));
                 if (Number(currentPower) > Number(Storage().HHAuto_Setting_autoTrollThreshold) //fight is above threshold
                     || Number(checkParanoiaSpendings('fight')) > 0 //paranoiaspendings to do
-                    || (sessionStorage.HHAuto_Temp_eventGirl
+                    || (sessionStorage.HHAuto_Temp_eventGirl  !== undefined
                         && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic === "false"
                         && Storage().HHAuto_Setting_buyCombat=="true"
                         && Storage().HHAuto_Setting_plusEvent==="true"
                         && sessionStorage.HHAuto_Temp_EventInBuyCombTime === "true"
                        ) // eventGirl available and buy comb true
-                    || (sessionStorage.HHAuto_Temp_eventGirl
+                    || (sessionStorage.HHAuto_Temp_eventGirl !== undefined
                         && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic === "true"
                         && Storage().HHAuto_Setting_plusEventMythic==="true"
                        ) // mythicEventGirl available and fights available
@@ -7804,7 +7802,7 @@ function parseEventPage()
             hero=getHero();
             if (
                 sessionStorage.HHAuto_Temp_EventInBuyCombTime === "true"
-                && sessionStorage.HHAuto_Temp_eventGirl
+                && sessionStorage.HHAuto_Temp_eventGirl !== undefined
                 && getSetHeroInfos('fight.amount')==0
                 && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic==="false"
             )
@@ -7826,7 +7824,7 @@ function parseEventPage()
             hero=getHero();
             if (
                 sessionStorage.HHAuto_Temp_MythicEventInBuyCombTime === "true"
-                && sessionStorage.HHAuto_Temp_eventGirl
+                && sessionStorage.HHAuto_Temp_eventGirl !== undefined
                 && getSetHeroInfos('fight.amount')==0
                 && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic==="true"
             )
@@ -8093,7 +8091,7 @@ var RechargeCombat=function()
     let canUsex50 = false;
     let remainingShards;
 
-    if (sessionStorage.HHAuto_Temp_eventGirl && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards && Number.isInteger(Number(JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards)))
+    if (sessionStorage.HHAuto_Temp_eventGirl !== undefined && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards && Number.isInteger(Number(JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards)))
     {
         remainingShards = Number(100 - Number(JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards));
     }
