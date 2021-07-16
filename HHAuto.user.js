@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HaremHeroes Automatic++ Beta test
 // @namespace    https://github.com/Roukys/HHauto
-// @version      5.5-beta.7
+// @version      5.5-beta.8
 // @description  Open the menu in HaremHeroes(topright) to toggle AutoControlls. Supports AutoSalary, AutoContest, AutoMission, AutoQuest, AutoTrollBattle, AutoArenaBattle and AutoPachinko(Free), AutoLeagues, AutoChampions and AutoStatUpgrades. Messages are printed in local console.
 // @author       JD and Dorten(a bit), Roukys, cossname, YotoTheOne
 // //@match        http*://nutaku.haremheroes.com/*
@@ -4030,6 +4030,7 @@ function ObserveAndGetGirlRewards()
                         {
                             renewEvent = true;
                         }
+                        logHHAuto("Won "+GirlShards+" event shards for "+eventsGirlz[GirlIndex].girl_name);
                     }
                 }
                 if (eventGirl.girl_id === GirlId)
