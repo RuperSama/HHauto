@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HaremHeroes Automatic++ Beta
 // @namespace    https://github.com/Roukys/HHauto
-// @version      5.5-beta.4
+// @version      5.5-beta.5
 // @description  Open the menu in HaremHeroes(topright) to toggle AutoControlls. Supports AutoSalary, AutoContest, AutoMission, AutoQuest, AutoTrollBattle, AutoArenaBattle and AutoPachinko(Free), AutoLeagues, AutoChampions and AutoStatUpgrades. Messages are printed in local console.
 // @author       JD and Dorten(a bit), Roukys, cossname, YotoTheOne
 // //@match        http*://nutaku.haremheroes.com/*
@@ -2670,19 +2670,19 @@ function simuFight(player, opponent) {
     player.ego -= Math.max(0, opponent.atk - player.def);
 
     //Log opponent name and starting egos for sim
-    console.log('Simulation log for: ' + opponent.name);
-    console.log('Starting Egos adjusted for the case proc scenario (0 for you and 1 for the opponent):');
-    console.log('Player Ego: ' + player.ego);
-    console.log('Opponent Ego: ' + opponent.ego);
+    //console.log('Simulation log for: ' + opponent.name);
+    //console.log('Starting Egos adjusted for the case proc scenario (0 for you and 1 for the opponent):');
+    //console.log('Player Ego: ' + player.ego);
+    //console.log('Opponent Ego: ' + opponent.ego);
 
     function play_turn(cur) {
         let o = cur === player ? opponent : player;
 
         o.ego -= Math.max(0, cur.atk - o.def);
-        console.log('Round ' + (turns + 1) + ': ' + cur.text + ' hit! -' + Math.max(0, (cur.atk - o.def)));
+        //console.log('Round ' + (turns + 1) + ': ' + cur.text + ' hit! -' + Math.max(0, (cur.atk - o.def)));
 
         //Log results
-        console.log('after Round ' + (turns + 1) + ': ' + o.text + ' ego: ' + o.ego);
+        //console.log('after Round ' + (turns + 1) + ': ' + o.text + ' ego: ' + o.ego);
     }
 
     //Simulate challenge
@@ -2694,7 +2694,7 @@ function simuFight(player, opponent) {
             opponentEgoCheck -= player.atk - opponent.def;
 
             if (opponentEgoCheck <= 0)
-                console.log('Victory! With 1 critical hit for player, Opponent ego: ' + opponentEgoCheck);
+                //console.log('Victory! With 1 critical hit for player, Opponent ego: ' + opponentEgoCheck);
 
             player.ego = 0;
             break;
@@ -2707,7 +2707,7 @@ function simuFight(player, opponent) {
             playerEgoCheck -= opponent.atk - player.def;
 
             if (playerEgoCheck <= 0)
-                console.log('Defeat! With 1 more critical hit for opponent, Player ego: ' + playerEgoCheck);
+                //console.log('Defeat! With 1 more critical hit for opponent, Player ego: ' + playerEgoCheck);
 
             opponent.ego = 0;
             break;
