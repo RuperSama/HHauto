@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HaremHeroes Automatic++ Beta
 // @namespace    https://github.com/Roukys/HHauto
-// @version      5.5-beta.5
+// @version      5.5-beta.6
 // @description  Open the menu in HaremHeroes(topright) to toggle AutoControlls. Supports AutoSalary, AutoContest, AutoMission, AutoQuest, AutoTrollBattle, AutoArenaBattle and AutoPachinko(Free), AutoLeagues, AutoChampions and AutoStatUpgrades. Messages are printed in local console.
 // @author       JD and Dorten(a bit), Roukys, cossname, YotoTheOne
 // //@match        http*://nutaku.haremheroes.com/*
@@ -11,8 +11,8 @@
 // //@match        http*://*.comixharem.com/*
 // @grant        GM_addStyle
 // @license      MIT
-// @updateURL   https://github.com/Roukys/HHauto/raw/new-battle-exp-test-server/HHAuto.user.js
-// @downloadURL https://github.com/Roukys/HHauto/raw/new-battle-exp-test-server/HHAuto.user.js
+// @updateURL   https://github.com/Roukys/HHauto/raw/new-test-beta-with-event/HHAuto.user.js
+// @downloadURL https://github.com/Roukys/HHauto/raw/new-test-beta-with-event/HHAuto.user.js
 // ==/UserScript==
 
 //CSS Region
@@ -646,7 +646,8 @@ function getPage()
         {
             ob = document.getElementById("hh_hentai");
         }
-        var p=ob.className.match(/.*page-(.*) .*/i)[1];
+        //var p=ob.className.match(/.*page-(.*) .*/i)[1];
+        var p=ob.getAttribute('page');
         if (p=="missions" && $('h4.contests.selected').size()>0)
         {
             return "contests"
@@ -2153,7 +2154,10 @@ var doBossBattle = function()
     if(currentPower < 1)
     {
         //logHHAuto("No power for battle.");
-        return;
+        if (!canBuyFight().canBuy)
+        {
+            return;
+        }
     }
 
     var TTF;
@@ -2696,7 +2700,7 @@ function simuFight(player, opponent) {
             if (opponentEgoCheck <= 0)
                 //console.log('Victory! With 1 critical hit for player, Opponent ego: ' + opponentEgoCheck);
 
-            player.ego = 0;
+                player.ego = 0;
             break;
         }
         play_turn(player);
@@ -2709,7 +2713,7 @@ function simuFight(player, opponent) {
             if (playerEgoCheck <= 0)
                 //console.log('Defeat! With 1 more critical hit for opponent, Player ego: ' + playerEgoCheck);
 
-            opponent.ego = 0;
+                opponent.ego = 0;
             break;
         }
 
@@ -3772,145 +3776,159 @@ var CrushThemFights=function()
         let currentPower = Number(getSetHeroInfos('fight.amount'));
 
         //check if girl still available at troll in case of event
-        if (sessionStorage.HHAuto_Temp_eventGirl !== undefined)
+        if (TTF !== null)
         {
-            let rewardGirlz=$("#pre-battle #opponent-panel .fighter-rewards .rewards_list .girls_reward[data-rewards]");
-
-            if (rewardGirlz.length ===0 || !rewardGirlz.attr('data-rewards').includes('"id_girl":"'+JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_id+'"'))
+            if (sessionStorage.HHAuto_Temp_eventGirl !== undefined)
             {
-                logHHAuto("Seems "+JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_name+" is no more available at troll "+Trollz[Number(TTF)]+". Going to event page.");
-                parseEventPage();
+                let rewardGirlz=$("#pre-battle #opponent-panel .fighter-rewards .rewards_list .girls_reward[data-rewards]");
+
+                if (rewardGirlz.length ===0 || !rewardGirlz.attr('data-rewards').includes('"id_girl":"'+JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_id+'"'))
+                {
+                    logHHAuto("Seems "+JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_name+" is no more available at troll "+Trollz[Number(TTF)]+". Going to event page.");
+                    parseEventPage();
+                    return;
+                }
+            }
+            if (currentPower === 0)
+            {
+                RechargeCombat();
+                gotoPage("troll-pre-battle",{id_opponent:TTF});
                 return;
             }
-        }
 
-        if (sessionStorage.HHAuto_Temp_eventGirl !== undefined && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards && Number.isInteger(Number(JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards)) && battleButtonX10.length > 0 && battleButtonX50.length > 0)
-        {
-            remainingShards = Number(100 - Number(JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards));
-            let bypassThreshold = (
-                (JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic === "false"
-                 && Storage().HHAuto_Setting_buyCombat=="true"
-                 && Storage().HHAuto_Setting_plusEvent==="true"
-                 && sessionStorage.HHAuto_Temp_EventInBuyCombTime === "true"
-                ) // eventGirl available and buy comb true
-                || (JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic === "true"
-                    && Storage().HHAuto_Setting_plusEventMythic==="true"
-                   )
-            );
-
-            if (Storage().HHAuto_Setting_useX50Fights === "true"
-                && Storage().HHAuto_Setting_minShardsX50
-                && Number.isInteger(Number(Storage().HHAuto_Setting_minShardsX50))
-                && remainingShards >= Number(Storage().HHAuto_Setting_minShardsX50)
-                && (battleButtonX50Price === 0 || getSetHeroInfos('hard_currency')>=battleButtonX50Price+Number(Storage().HHAuto_Setting_kobanBank))
-                && currentPower >= 50
-                && (currentPower >= (Number(Storage().HHAuto_Setting_autoTrollThreshold) + 50)
-                    || bypassThreshold
-                   )
-               )
+            if (sessionStorage.HHAuto_Temp_eventGirl !== undefined && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards && Number.isInteger(Number(JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards)) && battleButtonX10.length > 0 && battleButtonX50.length > 0)
             {
-                logHHAuto("Going to crush 50 times: "+Trollz[Number(TTF)]+' for '+battleButtonX50Price+' kobans.');
+                remainingShards = Number(100 - Number(JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards));
+                let bypassThreshold = (
+                    (JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic === "false"
+                     && canBuyFight().canBuy
+                    ) // eventGirl available and buy comb true
+                    || (JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic === "true"
+                        && Storage().HHAuto_Setting_plusEventMythic==="true"
+                       )
+                );
 
-                hero.infos.hc_confirm = true;
-                // We have the power.
+                if (Storage().HHAuto_Setting_useX50Fights === "true"
+                    && Storage().HHAuto_Setting_minShardsX50
+                    && Number.isInteger(Number(Storage().HHAuto_Setting_minShardsX50))
+                    && remainingShards >= Number(Storage().HHAuto_Setting_minShardsX50)
+                    && (battleButtonX50Price === 0 || getSetHeroInfos('hard_currency')>=battleButtonX50Price+Number(Storage().HHAuto_Setting_kobanBank))
+                    && currentPower >= 50
+                    && (currentPower >= (Number(Storage().HHAuto_Setting_autoTrollThreshold) + 50)
+                        || bypassThreshold
+                       )
+                   )
+                {
+                    logHHAuto("Going to crush 50 times: "+Trollz[Number(TTF)]+' for '+battleButtonX50Price+' kobans.');
+
+                    hero.infos.hc_confirm = true;
+                    // We have the power.
+                    is_cheat_click=function(e) {
+                        return false;
+                    };
+                    battleButtonX50[0].click();
+                    hero.infos.hc_confirm = hcConfirmValue;
+                    sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh = Number(sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh) - 50;
+                    logHHAuto("Crushed 50 times: "+Trollz[Number(TTF)]+' for '+battleButtonX50Price+' kobans.');
+                    if (sessionStorage.HHAuto_Temp_questRequirement === "battle") {
+                        // Battle Done.
+                        sessionStorage.HHAuto_Temp_questRequirement = "none";
+                    }
+                    ObserveAndGetGirlRewards();
+                    return;
+                }
+                else
+                {
+                    if (Storage().HHAuto_Setting_useX50Fights === "true")
+                    {
+                        logHHAuto('Unable to use x50 for '+battleButtonX50Price+' kobans,fights : '+getSetHeroInfos('fight.amount')+'/50, remaining shards : '+remainingShards+'/'+Storage().HHAuto_Setting_minShardsX50+', kobans : '+getSetHeroInfos('hard_currency')+'/'+Number(Storage().HHAuto_Setting_kobanBank));
+                    }
+                }
+
+                if (Storage().HHAuto_Setting_useX10Fights === "true"
+                    && Storage().HHAuto_Setting_minShardsX10
+                    && Number.isInteger(Number(Storage().HHAuto_Setting_minShardsX10))
+                    && remainingShards >= Number(Storage().HHAuto_Setting_minShardsX10)
+                    && (battleButtonX10Price === 0 || getSetHeroInfos('hard_currency')>=battleButtonX10Price+Number(Storage().HHAuto_Setting_kobanBank))
+                    && currentPower >= 10
+                    && (currentPower >= (Number(Storage().HHAuto_Setting_autoTrollThreshold) + 10)
+                        || bypassThreshold
+                       )
+                   )
+                {
+                    logHHAuto("Going to crush 10 times: "+Trollz[Number(TTF)]+' for '+battleButtonX10Price+' kobans.');
+
+                    hero.infos.hc_confirm = true;
+                    // We have the power.
+                    is_cheat_click=function(e) {
+                        return false;
+                    };
+                    battleButtonX10[0].click();
+                    hero.infos.hc_confirm = hcConfirmValue;
+                    sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh = Number(sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh) - 10;
+                    logHHAuto("Crushed 10 times: "+Trollz[Number(TTF)]+' for '+battleButtonX10Price+' kobans.');
+                    if (sessionStorage.HHAuto_Temp_questRequirement === "battle") {
+                        // Battle Done.
+                        sessionStorage.HHAuto_Temp_questRequirement = "none";
+                    }
+                    ObserveAndGetGirlRewards();
+                    return;
+                }
+                else
+                {
+                    if (Storage().HHAuto_Setting_useX10Fights === "true")
+                    {
+                        logHHAuto('Unable to use x10 for '+battleButtonX10Price+' kobans,fights : '+getSetHeroInfos('fight.amount')+'/10, remaining shards : '+remainingShards+'/'+Storage().HHAuto_Setting_minShardsX10+', kobans : '+getSetHeroInfos('hard_currency')+'/'+Number(Storage().HHAuto_Setting_kobanBank));
+                    }
+                }
+            }
+
+            //Crushing one by one
+            if(battleButton === undefined || battleButton.length === 0){
+                logHHAuto("Battle Button was undefined. Disabling all auto-battle.");
+                document.getElementById("autoTrollCheckbox").checked = false;
+                Storage().HHAuto_Setting_autoTrollBattle = "false"
+
+                //document.getElementById("autoArenaCheckbox").checked = false;
+                if (sessionStorage.HHAuto_Temp_questRequirement === "battle")
+                {
+                    document.getElementById("autoQuestCheckbox").checked = false;
+                    Storage().HHAuto_Setting_autoQuest= "false";
+
+                    logHHAuto("Auto-quest disabled since it requires battle and auto-battle has errors.");
+                }
+                return;
+            }
+
+            if (currentPower > 0)
+            {
+                logHHAuto("Crushing: "+Trollz[Number(TTF)]);
+                //console.log(battleButton);
                 is_cheat_click=function(e) {
                     return false;
                 };
-                battleButtonX50[0].click();
-                hero.infos.hc_confirm = hcConfirmValue;
-                sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh = Number(sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh) - 50;
-                logHHAuto("Crushed 50 times: "+Trollz[Number(TTF)]+' for '+battleButtonX50Price+' kobans.');
-                if (sessionStorage.HHAuto_Temp_questRequirement === "battle") {
-                    // Battle Done.
-                    sessionStorage.HHAuto_Temp_questRequirement = "none";
+                battleButton[0].click();
+                if (sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh)
+                {
+                    sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh = Number(sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh) - 1;
                 }
-                ObserveAndGetGirlRewards();
-                return;
             }
             else
             {
-                if (Storage().HHAuto_Setting_useX50Fights === "true")
-                {
-                    logHHAuto('Unable to use x50 for '+battleButtonX50Price+' kobans,fights : '+getSetHeroInfos('fight.amount')+'/50, remaining shards : '+remainingShards+'/'+Storage().HHAuto_Setting_minShardsX50+', kobans : '+getSetHeroInfos('hard_currency')+'/'+Number(Storage().HHAuto_Setting_kobanBank));
-                }
-            }
-
-            if (Storage().HHAuto_Setting_useX10Fights === "true"
-                && Storage().HHAuto_Setting_minShardsX10
-                && Number.isInteger(Number(Storage().HHAuto_Setting_minShardsX10))
-                && remainingShards >= Number(Storage().HHAuto_Setting_minShardsX10)
-                && (battleButtonX10Price === 0 || getSetHeroInfos('hard_currency')>=battleButtonX10Price+Number(Storage().HHAuto_Setting_kobanBank))
-                && currentPower >= 10
-                && (currentPower >= (Number(Storage().HHAuto_Setting_autoTrollThreshold) + 10)
-                    || bypassThreshold
-                   )
-               )
-            {
-                logHHAuto("Going to crush 10 times: "+Trollz[Number(TTF)]+' for '+battleButtonX10Price+' kobans.');
-
-                hero.infos.hc_confirm = true;
-                // We have the power.
-                is_cheat_click=function(e) {
-                    return false;
-                };
-                battleButtonX10[0].click();
-                hero.infos.hc_confirm = hcConfirmValue;
-                sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh = Number(sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh) - 10;
-                logHHAuto("Crushed 10 times: "+Trollz[Number(TTF)]+' for '+battleButtonX10Price+' kobans.');
-                if (sessionStorage.HHAuto_Temp_questRequirement === "battle") {
-                    // Battle Done.
-                    sessionStorage.HHAuto_Temp_questRequirement = "none";
-                }
-                ObserveAndGetGirlRewards();
+                // We need more power.
+                logHHAuto("Battle requires "+battle_price+" power.");
+                sessionStorage.HHAuto_Temp_battlePowerRequired = battle_price;
+                if(sessionStorage.HHAuto_Temp_questRequirement === "battle")sessionStorage.HHAuto_Temp_questRequirement = "P"+battle_price;
+                gotoPage("home");
                 return;
-            }
-            else
-            {
-                if (Storage().HHAuto_Setting_useX10Fights === "true")
-                {
-                    logHHAuto('Unable to use x10 for '+battleButtonX10Price+' kobans,fights : '+getSetHeroInfos('fight.amount')+'/10, remaining shards : '+remainingShards+'/'+Storage().HHAuto_Setting_minShardsX10+', kobans : '+getSetHeroInfos('hard_currency')+'/'+Number(Storage().HHAuto_Setting_kobanBank));
-                }
-            }
-        }
-
-        //Crushing one by one
-        if(battleButton === undefined || battleButton.length === 0){
-            logHHAuto("Battle Button was undefined. Disabling all auto-battle.");
-            document.getElementById("autoTrollCheckbox").checked = false;
-            Storage().HHAuto_Setting_autoTrollBattle = "false"
-
-            //document.getElementById("autoArenaCheckbox").checked = false;
-            if (sessionStorage.HHAuto_Temp_questRequirement === "battle")
-            {
-                document.getElementById("autoQuestCheckbox").checked = false;
-                Storage().HHAuto_Setting_autoQuest= "false";
-
-                logHHAuto("Auto-quest disabled since it requires battle and auto-battle has errors.");
-            }
-            return;
-        }
-
-        if (currentPower > 0)
-        {
-            logHHAuto("Crushing: "+Trollz[Number(TTF)]);
-            //console.log(battleButton);
-            is_cheat_click=function(e) {
-                return false;
-            };
-            battleButton[0].click();
-            if (sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh)
-            {
-                sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh = Number(sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh) - 1;
             }
         }
         else
         {
-            // We need more power.
-            logHHAuto("Battle requires "+battle_price+" power.");
-            sessionStorage.HHAuto_Temp_battlePowerRequired = battle_price;
-            if(sessionStorage.HHAuto_Temp_questRequirement === "battle")sessionStorage.HHAuto_Temp_questRequirement = "P"+battle_price;
-            gotoPage("home");
-            return;
+            is_cheat_click=function(e) {
+                return false;
+            };
+            battleButton[0].click();
         }
     }
     else
@@ -4648,10 +4666,8 @@ var flipParanoia=function()
             //mythic ongoing and can buyCombat
             var hero=getHero();
             var price=hero.get_recharge_cost("fight");
-            if (sessionStorage.HHAuto_Temp_MythicEventInBuyCombTime === "true"
+            if (canBuyFight().canBuy
                 && getSetHeroInfos('fight.amount')==0
-                && getSetHeroInfos('hard_currency')>=price+Number(Storage().HHAuto_Setting_kobanBank)
-                && Storage().HHAuto_Setting_buyMythicCombat=="true"
                )
             {
 
@@ -5978,28 +5994,36 @@ var autoLoop = function () {
         */
 
         //if a new event is detected
-        if(busy === false &&
-           ((getPage() === "home" && $('#contains_all #homepage .event-widget a[rel="event"]').length >0) || (getPage()==="event" && $("#contains_all #events .nc-event-container[parsed]").length === 0))
-           && (checkTimer('eventGoing') || checkTimer('eventMythicGoing'))
-           && ( sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh === undefined || getTimer('eventRefreshExpiration') === -1 || sessionStorage.HHAuto_Temp_eventGirl === undefined)
-           && ( Storage().HHAuto_Setting_plusEvent==="true" || Storage().HHAuto_Setting_plusEventMythic==="true")
-          )
-        {
-            logHHAuto("Going to check on new events.");
-            busy = true;
-            busy = parseEventPage();
-        }
+        if(
+            busy === false
+            &&
+            (
+                (
+                    getPage() === "home"
+                    && $('#contains_all #homepage .event-widget a[rel="event"]').length >0
+                    && checkTimer('eventGoing')
+                    && Storage().HHAuto_Setting_plusEvent==="true"
+                )
+                ||
+                (
+                    getPage() === "home"
+                    && $('#contains_all #homepage .event-widget a[rel="mythic_event"]').length >0
+                    && checkTimer('eventMythicGoing')
+                    && Storage().HHAuto_Setting_plusEventMythic==="true"
+                )
+                ||
+                (
+                    getPage()==="event"
+                    && $("#contains_all #events .nc-event-container[parsed]").length === 0
+                )
+                || Number(sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh) < 1
+                || checkTimerMustExist('eventRefreshExpiration')
 
-        //if need to recheck event
-        if(busy === false
-           && (Number(sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh) < 1
-               || checkTimerMustExist('eventRefreshExpiration')
-               || (getPage()==="event" && $("#contains_all #events .nc-event-container[parsed]").length === 0)
-               || (Number(getSetHeroInfos('fight.amount')) === 0 && sessionStorage.HHAuto_Temp_eventGirl !== undefined && ( Storage().HHAuto_Setting_buyMythicCombat==="true" || Storage().HHAuto_Setting_buyCombat==="true" )))
-           && ( Storage().HHAuto_Setting_plusEvent==="true" || Storage().HHAuto_Setting_plusEventMythic==="true")
-          )
+            )
+        )
+            //&& ( sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh === undefined || getTimer('eventRefreshExpiration') === -1 || sessionStorage.HHAuto_Temp_eventGirl === undefined)
         {
-            logHHAuto("Going to check on ongoing events.");
+            logHHAuto("Going to check on events.");
             busy = true;
             busy = parseEventPage();
         }
@@ -6012,16 +6036,14 @@ var autoLoop = function () {
 
         if(Storage().HHAuto_Setting_autoTrollBattle === "true" && getSetHeroInfos('questing.id_world')>0 && sessionStorage.HHAuto_Temp_autoLoop === "true")
         {
-            if(busy === false && currentPower >= Number(sessionStorage.HHAuto_Temp_battlePowerRequired) && currentPower > 0)
+            if(busy === false && currentPower >= Number(sessionStorage.HHAuto_Temp_battlePowerRequired) && (currentPower > 0 || canBuyFight().canBuy))
             {
                 //logHHAuto("fight amount: "+currentPower+" troll threshold: "+Number(Storage().HHAuto_Setting_autoTrollThreshold)+" paranoia fight: "+Number(checkParanoiaSpendings('fight')));
                 if (Number(currentPower) > Number(Storage().HHAuto_Setting_autoTrollThreshold) //fight is above threshold
                     || Number(checkParanoiaSpendings('fight')) > 0 //paranoiaspendings to do
                     || (sessionStorage.HHAuto_Temp_eventGirl  !== undefined
                         && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic === "false"
-                        && Storage().HHAuto_Setting_buyCombat=="true"
-                        && Storage().HHAuto_Setting_plusEvent==="true"
-                        && sessionStorage.HHAuto_Temp_EventInBuyCombTime === "true"
+                        && canBuyFight().canBuy
                        ) // eventGirl available and buy comb true
                     || (sessionStorage.HHAuto_Temp_eventGirl !== undefined
                         && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic === "true"
@@ -6389,7 +6411,7 @@ var autoLoop = function () {
     {
         moduleSimSeasonReward();
     }
-    if (getPage() === "event")
+    if (getPage() === "event" && ( Storage().HHAuto_Setting_plusEvent==="true" || Storage().HHAuto_Setting_plusEventMythic==="true"))
     {
         parseEventPage();
         moduleDisplayEventPriority();
@@ -7807,8 +7829,6 @@ var clearEventData=function()
 {
     sessionStorage.removeItem('HHAuto_Temp_eventsGirlz');
     sessionStorage.removeItem('HHAuto_Temp_eventGirl');
-    sessionStorage.HHAuto_Temp_EventInBuyCombTime = "false";
-    sessionStorage.HHAuto_Temp_MythicEventInBuyCombTime = "false";
     clearTimer('eventMythicNextWave');
     clearTimer('eventRefreshExpiration');
     sessionStorage.removeItem('HHAuto_Temp_EventFightsBeforeRefresh');
@@ -7902,54 +7922,9 @@ function parseEventPage()
         }
         else
         {
+            queryEventTabCheck[0].setAttribute('parsed', 'true');
             clearEventData();
         }
-
-        var hero=getHero();
-        //buy comb
-        if (Storage().HHAuto_Setting_buyCombat=="true" && Storage().HHAuto_Setting_plusEvent==="true" )
-        {
-            //logHHAuto('WTF!');
-            var diff=Math.ceil(Timers["eventGoing"]/1000)-Math.ceil(new Date().getTime()/1000);
-            //logHHAuto(diff);
-            if (diff<Storage().HHAuto_Setting_buyCombTimer*3600)
-            {
-                sessionStorage.HHAuto_Temp_EventInBuyCombTime = "true";
-            }
-            hero=getHero();
-            if (
-                sessionStorage.HHAuto_Temp_EventInBuyCombTime === "true"
-                && sessionStorage.HHAuto_Temp_eventGirl !== undefined
-                && getSetHeroInfos('fight.amount')==0
-                && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic==="false"
-            )
-            {
-                RechargeCombat();
-            }
-        }
-
-        //buy comb mythic
-        if (Storage().HHAuto_Setting_buyMythicCombat=="true" &&  Storage().HHAuto_Setting_plusEventMythic==="true")
-        {
-            //logHHAuto('WTF!');
-            var diffMythic=Math.ceil(Timers["eventMythicGoing"]/1000)-Math.ceil(new Date().getTime()/1000);
-
-            if (diffMythic<Storage().HHAuto_Setting_buyMythicCombTimer*3600)
-            {
-                sessionStorage.HHAuto_Temp_MythicEventInBuyCombTime = "true";
-            }
-            hero=getHero();
-            if (
-                sessionStorage.HHAuto_Temp_MythicEventInBuyCombTime === "true"
-                && sessionStorage.HHAuto_Temp_eventGirl !== undefined
-                && getSetHeroInfos('fight.amount')==0
-                && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic==="true"
-            )
-            {
-                RechargeCombat();
-            }
-        }
-
         return false;
     }
     else
@@ -8195,79 +8170,104 @@ var CollectEventData=function()
 //         });
 // }
 
-var RechargeCombat=function()
+
+function canBuyFight()
 {
+    let type="fight";
     let hero=getHero();
-    let type = "fight";
+    let result = {canBuy:false, price:0, max:0, toBuy:0, event_mythic:"false", type:type};
     let maxx50 = 50;
     let maxx20 = 20;
     let currentFight =Number( getSetHeroInfos('fight.amount'));
-    let pricex50=hero.get_max_recharge_cost("fight",maxx50)
-    let pricex20=hero.get_recharge_cost("fight");
+    let pricex50=hero.get_max_recharge_cost(type,maxx50)
+    let pricex20=hero.get_recharge_cost(type);
     let canRecharge20 = false;
-    let canUsex50 = false;
     let remainingShards;
 
     if (sessionStorage.HHAuto_Temp_eventGirl !== undefined && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards && Number.isInteger(Number(JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards)))
     {
-        remainingShards = Number(100 - Number(JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards));
-    }
-    else
-    {
-        logHHAuto("Unable to retreive Event girl shards, stops buying.");
-        return;
-    }
-    if (Storage().HHAuto_Setting_minShardsX50
-        && Number.isInteger(Number(Storage().HHAuto_Setting_minShardsX50))
-        && remainingShards >= Number(Storage().HHAuto_Setting_minShardsX50)
-        && getSetHeroInfos('hard_currency')>=pricex50+Number(Storage().HHAuto_Setting_kobanBank)
-        && Storage().HHAuto_Setting_useX50Fights === "true"
-       )
-    {
-        canUsex50 = true;
-    }
-    else
-    {
-
-        logHHAuto('Unable to recharge up to '+maxx50+' for '+pricex50+' kobans, remaining shards : '+remainingShards+'/'+Storage().HHAuto_Setting_minShardsX50+', kobans : '+getSetHeroInfos('hard_currency')+'/'+Number(Storage().HHAuto_Setting_kobanBank));
-        if (getSetHeroInfos('hard_currency')>=pricex20+Number(Storage().HHAuto_Setting_kobanBank))
+        if (
+            (
+                Storage().HHAuto_Setting_buyCombat=="true"
+                && Storage().HHAuto_Setting_plusEvent==="true"
+                && getSecondsLeft("eventGoing") !== 0
+                && Number(Storage().HHAuto_Setting_buyCombTimer) !== NaN
+                && getSecondsLeft("eventGoing") < Storage().HHAuto_Setting_buyCombTimer*3600
+                && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic === "false"
+            )
+            ||
+            (
+                Storage().HHAuto_Setting_plusEventMythic==="true"
+                && Storage().HHAuto_Setting_buyMythicCombat=="true"
+                && getSecondsLeft("eventMythicGoing") !== 0
+                && Number(Storage().HHAuto_Setting_buyMythicCombTimer) !== NaN
+                && getSecondsLeft("eventMythicGoing") < Storage().HHAuto_Setting_buyMythicCombTimer*3600
+                && JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic === "true"
+            )
+        )
         {
-            canRecharge20 = true;
+            result.event_mythic = JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).is_mythic;
         }
         else
         {
-            logHHAuto('Unable to recharge up to '+maxx20+' for '+pricex20+' kobans : '+getSetHeroInfos('hard_currency')+'/'+Number(Storage().HHAuto_Setting_kobanBank));
-            return;
+            return result;
+        }
+
+        //console.log(result);
+        remainingShards = Number(100 - Number(JSON.parse(sessionStorage.HHAuto_Temp_eventGirl).girl_shards));
+        if (Storage().HHAuto_Setting_minShardsX50
+            && Number.isInteger(Number(Storage().HHAuto_Setting_minShardsX50))
+            && remainingShards >= Number(Storage().HHAuto_Setting_minShardsX50)
+            && getSetHeroInfos('hard_currency')>=pricex50+Number(Storage().HHAuto_Setting_kobanBank)
+            && Storage().HHAuto_Setting_useX50Fights === "true"
+           )
+        {
+            result.max = maxx50;
+            result.canBuy = true;
+            result.price = pricex50;
+            result.toBuy = maxx50-currentFight;
+        }
+        else
+        {
+
+            logHHAuto('Unable to recharge up to '+maxx50+' for '+pricex50+' kobans, remaining shards : '+remainingShards+'/'+Storage().HHAuto_Setting_minShardsX50+', kobans : '+getSetHeroInfos('hard_currency')+'/'+Number(Storage().HHAuto_Setting_kobanBank));
+            if (getSetHeroInfos('hard_currency')>=pricex20+Number(Storage().HHAuto_Setting_kobanBank))
+            {
+                result.max = maxx20;
+                result.canBuy = true;
+                result.price = pricex20;
+                result.toBuy = maxx20-currentFight;
+            }
+            else
+            {
+                logHHAuto('Unable to recharge up to '+maxx20+' for '+pricex20+' kobans : '+getSetHeroInfos('hard_currency')+'/'+Number(Storage().HHAuto_Setting_kobanBank));
+                return;
+            }
         }
     }
 
-    let price;
-    let max;
+    return result;
+}
 
-    if (canUsex50)
+var RechargeCombat=function()
+{
+    let hero=getHero();
+
+    let canBuyResult = canBuyFight();
+    if (canBuyResult.canBuy)
     {
-        price = pricex50;
-        max = maxx50;
+        logHHAuto('Recharging '+canBuyResult.toBuy+' fights for '+canBuyResult.price+' kobans.');
+        let hcConfirmValue = hero.infos.hc_confirm;
+        hero.infos.hc_confirm = true;
+        // We have the power.
+        is_cheat_click=function(e) {
+            return false;
+        };
+        console.log($("plus[type='energy_fight']"), canBuyResult.price,canBuyResult.type, canBuyResult.max);
+        hero.recharge($("plus[type='energy_fight']"), canBuyResult.price,canBuyResult.type, canBuyResult.max);
+        hero.infos.hc_confirm = hcConfirmValue;
+        logHHAuto('Recharged up to '+canBuyResult.max+' fights for '+canBuyResult.price+' kobans.');
     }
-    else if (canRecharge20)
-    {
-        price = pricex20;
-        max = maxx20;
-    }
-
-    let neededFights = Number(max-currentFight);
-    logHHAuto('Recharging '+neededFights+' fights for '+price+' kobans.');
-    let hcConfirmValue = hero.infos.hc_confirm;
-    hero.infos.hc_confirm = true;
-    // We have the power.
-    is_cheat_click=function(e) {
-        return false;
-    };
-    hero.recharge($("plus[type='energy_fight']"), price,type, max);
-    hero.infos.hc_confirm = hcConfirmValue;
-    logHHAuto('Recharged up to '+max+' fights for '+price+' kobans.');
-
-    setTimeout(function(){location.reload();},randomInterval(500,1000));
     //     hh_ajax(
     //         {
     //             class: "Hero",
@@ -9217,8 +9217,6 @@ var HHVars_Temp=[
     //"localStorage.HHAuto_Temp_MigratedVars",
     "sessionStorage.HHAuto_Temp_LeagueTempOpponentList",
     "sessionStorage.HHAuto_Temp_CheckSpentPoints",
-    "sessionStorage.HHAuto_Temp_MythicEventInBuyCombTime",
-    "sessionStorage.HHAuto_Temp_EventInBuyCombTime",
     "sessionStorage.HHAuto_Temp_EventFightsBeforeRefresh"];
 
 
