@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HaremHeroes Automatic++ Beta Prod
 // @namespace    https://github.com/Roukys/HHauto
-// @version      5.5-beta.5
+// @version      5.5-beta.6
 // @description  Open the menu in HaremHeroes(topright) to toggle AutoControlls. Supports AutoSalary, AutoContest, AutoMission, AutoQuest, AutoTrollBattle, AutoArenaBattle and AutoPachinko(Free), AutoLeagues, AutoChampions and AutoStatUpgrades. Messages are printed in local console.
 // @author       JD and Dorten(a bit), Roukys, cossname, YotoTheOne
 // @match        http*://nutaku.haremheroes.com/*
@@ -1145,9 +1145,13 @@ function modulePachinko()
         +     '<div style="padding:10px" class="tooltipHH"><span class="tooltipHHtext">'+getTextForUI("PachinkoSelector","tooltip")+'</span><select id="PachinkoSelector"></select></div>'
         +     '<div style="padding:10px" class="tooltipHH"><span class="tooltipHHtext">'+getTextForUI("PachinkoLeft","tooltip")+'</span><span id="PachinkoLeft"></span></div>'
         +    '</div>'
-        +    '<div style="display:flex;flex-direction:row">'
+        +    '<div style="display:flex;flex-direction:row;align-items:center;">'
         +     '<div style="padding:10px"class="tooltipHH"><span class="tooltipHHtext">'+getTextForUI("PachinkoPlayX","tooltip")+'</span><label class="myButton" id="PachinkoPlayX">'+getTextForUI("PachinkoPlayX","elementText")+'</label></div>'
         +     '<div style="padding:10px;" class="tooltipHH"><span class="tooltipHHtext">'+getTextForUI("PachinkoXTimes","tooltip")+'</span><input id="PachinkoXTimes" style="width:50px;height:20px" required pattern="'+HHAuto_inputPattern.menuExpLevel+'" type="text" value="1"></div>'
+        +     '<div style="display:flex;flex-direction:column;align-items: center;">'
+        +      '<div>'+getTextForUI("PachinkoByPassNoGirls","elementText")+'</div>'
+        +      '<div class="tooltipHH"><span class="tooltipHHtext">'+getTextForUI("PachinkoByPassNoGirls","tooltip")+'</span><input id="PachinkoByPassNoGirls" type="checkbox"></div>'
+        +     '</div>'
         +    '</div>'
         +   '<p style="color: red;" id="PachinkoError"></p>'
         +  '</div>'
@@ -1209,6 +1213,7 @@ function modulePachinko()
     function pachinkoPlayXTimes()
     {
         let timerSelector = document.getElementById("PachinkoSelector");
+        let ByPassNoGirlChecked = document.getElementById("PachinkoByPassNoGirls").checked;
         let buttonValue = Number(timerSelector.options[timerSelector.selectedIndex].value);
         let buttonSelector = "div.playing-zone div.btns-section button.blue_button_L[nb_games="+buttonValue+"]";
         let orbsLeftSelector = buttonSelector+ " span[total_orbs]";
@@ -1252,12 +1257,19 @@ function modulePachinko()
                 logHHAuto("PopUp closed, cancelling interval.");
                 return;
             }
-            if (document.getElementById("confirm_pachinko") !== null)
+            if (document.getElementById("confirm_pachinko") !== null )
             {
-                logHHAuto("No more girl on Pachinko, cancelling.");
+                if (ByPassNoGirlChecked && document.getElementById("confirm_pachinko").querySelector("#popup_confirm.blue_button_L") !== null)
+                {
+                    document.getElementById("confirm_pachinko").querySelector("#popup_confirm.blue_button_L").click();
+                }
+                else
+                {
+                    logHHAuto("No more girl on Pachinko, cancelling.");
                 maskHHPopUp();
                 buildPachinkoSelectPopUp();
                 document.getElementById("PachinkoError").innerText=getTextForUI("PachinkoNoGirls","elementText");
+                }
             }
             let pachinkoSelectedButton= $(buttonSelector);
             let rewardQuery="div#rewards_popup button.blue_button_L";
@@ -1295,8 +1307,6 @@ function modulePachinko()
                                                                {
         buildPachinkoSelectPopUp()
     });
-
-
 }
 
 function moduleSimSeasonReward()
@@ -4048,8 +4058,15 @@ function ObserveAndGetGirlRewards()
     let inCaseTimer = setTimeout(function(){gotoPage('home');}, 60000); //in case of issue
     let observer = new MutationObserver(function(mutations) {
         mutations.forEach(function(mutation) {
-            let eventsGirlz = JSON.parse(sessionStorage.HHAuto_Temp_eventsGirlz);
-            let eventGirl = JSON.parse(sessionStorage.HHAuto_Temp_eventGirl);
+            if (sessionStorage.HHAuto_Temp_eventsGirlz === undefined
+                || sessionStorage.HHAuto_Temp_eventGirl === undefined
+                || !isJSON(sessionStorage.HHAuto_Temp_eventsGirlz)
+                || !isJSON(sessionStorage.HHAuto_Temp_eventGirl))
+            {
+                return;
+            }
+            let eventsGirlz =isJSON(sessionStorage.HHAuto_Temp_eventsGirlz)?JSON.parse(sessionStorage.HHAuto_Temp_eventsGirlz):{}
+            let eventGirl = isJSON(sessionStorage.HHAuto_Temp_eventGirl)?JSON.parse(sessionStorage.HHAuto_Temp_eventGirl):{};
             let TTF = eventGirl.troll_id;
             if ($('#rewards_popup #reward_holder .shards_wrapper').length === 0)
             {
@@ -4123,6 +4140,34 @@ function ObserveAndGetGirlRewards()
         childList: true
         , subtree: true
         , attributes: false
+        , characterData: false
+    });
+
+    let observerPass = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation)
+                          {
+            let querySkip = '#contains_all #battle_middle .battle_buttons_container .blue_text_button[rel="skip"][style]';
+            if ($(querySkip).length === 0
+                && $(querySkip)[0].style.display!=="block"
+               )
+            {
+                return;
+            }
+            else
+            {
+                is_cheat_click=function(e) {
+                    return false;
+                };
+                $(querySkip)[0].click();
+                logHHAuto("Clicking on pass battle.");
+            }
+        })
+    });
+
+    observerPass.observe($('#contains_all #battle_middle .battle_buttons_container .blue_text_button[rel="skip"]')[0], {
+        childList: false
+        , subtree: false
+        , attributes: true
         , characterData: false
     });
 }
@@ -6592,22 +6637,49 @@ function moduleShopActions()
             GM_addStyle('div#menuAff-moveRight {'
                         + 'border-left-color: blue;}');
 
-            document.getElementById("menuAff-moveLeft").addEventListener("click", function()
-                                                                         {
+            function moveLeft()
+            {
                 $('div.g1 span[nav="left"]').click();
                 calculateAffSelectedGirl();
+            }
+            function moveRight()
+            {
+                $('div.g1 span[nav="right"]').click();
+                calculateAffSelectedGirl();
+            }
+            function launchGiveAff()
+            {
+                document.getElementById("menuAff-moveLeft").style.visibility = "hidden";
+                document.getElementById("menuAff-moveRight").style.visibility = "hidden";
+                giveAff(getSelectGirlID, AffToGive, giftArray);
+            }
+            document.addEventListener('keydown', evt => {
+                console.log("test");
+                if (evt.key === 'Enter') {
+                    launchGiveAff();
+                }
+                else if (evt.keyCode == '37') {
+                    // left arrow
+                    moveLeft();
+                }
+                else if (evt.keyCode == '39') {
+                    // right arrow
+                    moveRight();
+                }
+            });
+
+            document.getElementById("menuAff-moveLeft").addEventListener("click", function()
+                                                                         {
+                moveLeft();
             });
             document.getElementById("menuAff-moveRight").addEventListener("click", function()
                                                                           {
-                $('div.g1 span[nav="right"]').click();
-                calculateAffSelectedGirl();
+                moveRight();
             });
             document.getElementById("menuAff").addEventListener("click", calculateAffSelectedGirl);
             document.getElementById("menuAffButton").addEventListener("click", function()
                                                                       {
-                document.getElementById("menuAff-moveLeft").style.visibility = "hidden";
-                document.getElementById("menuAff-moveRight").style.visibility = "hidden";
-                giveAff(getSelectGirlID, AffToGive, giftArray);
+                launchGiveAff();
             });
             document.getElementById("menuAffCancel").addEventListener("click", function(){
 
@@ -6886,16 +6958,43 @@ function moduleShopActions()
 
             GM_addStyle('div#menuExp-moveRight {'
                         + 'border-left-color: blue;}');
-
-            document.getElementById("menuExp-moveLeft").addEventListener("click", function()
-                                                                         {
+            function moveLeft()
+            {
                 $('div.g1 span[nav="left"]').click();
                 prepareExp();
+            }
+            function moveRight()
+            {
+                $('div.g1 span[nav="right"]').click();
+                prepareExp();
+            }
+            function launchGiveExp()
+            {
+                document.getElementById("menuExp-moveLeft").style.visibility = "hidden";
+                document.getElementById("menuExp-moveRight").style.visibility = "hidden";
+                giveExp(getSelectGirlID, ExpToGive, potionArray);
+            }
+            document.addEventListener('keydown', evt => {
+                console.log("test");
+                if (evt.key === 'Enter') {
+                    launchGiveExp();
+                }
+                else if (evt.keyCode == '37') {
+                    // left arrow
+                    moveLeft();
+                }
+                else if (evt.keyCode == '39') {
+                    // right arrow
+                    moveRight();
+                }
+            });
+            document.getElementById("menuExp-moveLeft").addEventListener("click", function()
+                                                                         {
+                moveLeft();
             });
             document.getElementById("menuExp-moveRight").addEventListener("click", function()
                                                                           {
-                $('div.g1 span[nav="right"]').click();
-                prepareExp();
+                moveRight();
             });
             document.getElementById("menuExp").addEventListener("click", function()
                                                                 {
@@ -6915,9 +7014,7 @@ function moduleShopActions()
             });
             document.getElementById("menuExpButton").addEventListener("click", function()
                                                                       {
-                document.getElementById("menuExp-moveLeft").style.visibility = "hidden";
-                document.getElementById("menuExp-moveRight").style.visibility = "hidden";
-                giveExp(getSelectGirlID, ExpToGive, potionArray);
+                launchGiveExp();
             });
             document.getElementById("menuExpCancel").addEventListener("click", function(){
 
@@ -8537,6 +8634,15 @@ function myfileLoad_onChange(event)
     reader.readAsText(event.target.files[0]);
 }
 
+function isJSON(str)
+{
+    if ( /^\s*$/.test(str) ) return false;
+    str = str.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, '@');
+    str = str.replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']');
+    str = str.replace(/(?:^|:|,)(?:\s*\[)+/g, '');
+    return (/^[\],:{}\s]*$/).test(str);
+  }
+
 function myfileLoad_onReaderLoad(event){
     var text = event.target.result;
     var storageType;
@@ -8544,13 +8650,13 @@ function myfileLoad_onReaderLoad(event){
     var variableName;
 
     //Json validation
-    if (/^[\],:{}\s]*$/.test(text.replace(/\\["\\\/bfnrtu]/g, '@').
-                             replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']').
-                             replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
+    if (isJSON(text))
+    {
         logHHAuto('the json is ok');
         var jsonNewSettings = JSON.parse(event.target.result);
         //Assign new values to Storage();
-        for (const [key, value] of Object.entries(jsonNewSettings)) {
+        for (const [key, value] of Object.entries(jsonNewSettings))
+        {
             storageType=key.split(".")[0];
             variableName=key.split(".")[1];
             switch (storageType)
@@ -8913,6 +9019,8 @@ HHAuto_ToolTips.en.PachinkoButton = {elementText : "Use Pachinko", tooltip : "Al
 HHAuto_ToolTips.en.PachinkoOrbsLeft = {elementText : " orbs remaining.", tooltip : ""};
 HHAuto_ToolTips.en.PachinkoInvalidOrbsNb = {elementText : 'Invalid orbs number'};
 HHAuto_ToolTips.en.PachinkoNoGirls = {elementText : 'No more any girls available.'};
+HHAuto_ToolTips.en.PachinkoByPassNoGirls = {elementText : 'Bypass no girls', tooltip : "Bypass the no girls in Pachinko warning."};
+
 
 HHAuto_ToolTips.fr = [];
 HHAuto_ToolTips.fr.saveDebug = { elementText: "Sauver log", tooltip : "Sauvegarder un fichier journal de débogage."};
