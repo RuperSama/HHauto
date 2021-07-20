@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HaremHeroes Automatic++ Beta test
 // @namespace    https://github.com/Roukys/HHauto
-// @version      5.5-beta.12
+// @version      5.5-beta.13
 // @description  Open the menu in HaremHeroes(topright) to toggle AutoControlls. Supports AutoSalary, AutoContest, AutoMission, AutoQuest, AutoTrollBattle, AutoArenaBattle and AutoPachinko(Free), AutoLeagues, AutoChampions and AutoStatUpgrades. Messages are printed in local console.
 // @author       JD and Dorten(a bit), Roukys, cossname, YotoTheOne
 // //@match        http*://nutaku.haremheroes.com/*
@@ -6563,12 +6563,12 @@ function moduleShopActions()
             GM_addStyle('div#menuAff-moveRight {'
                         + 'border-left-color: blue;}');
 
-            function moveLeft()
+            function moveLeftAff()
             {
                 $('div.g1 span[nav="left"]').click();
                 calculateAffSelectedGirl();
             }
-            function moveRight()
+            function moveRightAff()
             {
                 $('div.g1 span[nav="right"]').click();
                 calculateAffSelectedGirl();
@@ -6579,30 +6579,40 @@ function moduleShopActions()
                 document.getElementById("menuAff-moveRight").style.visibility = "hidden";
                 giveAff(getSelectGirlID, AffToGive, giftArray);
             }
-            document.addEventListener('keydown', evt => {
-                console.log("test");
-                if (evt.key === 'Enter') {
+            var KeyUpAff = function(evt)
+            {
+                if (evt.key === 'Enter')
+                {
                     launchGiveAff();
                 }
-                else if (evt.keyCode == '37') {
+                else if (evt.keyCode == '37')
+                {
                     // left arrow
-                    moveLeft();
+                    moveLeftAff();
                 }
-                else if (evt.keyCode == '39') {
+                else if (evt.keyCode == '39')
+                {
                     // right arrow
-                    moveRight();
+                    moveRightAff();
                 }
-            });
+            }
+
+            
 
             document.getElementById("menuAff-moveLeft").addEventListener("click", function()
                                                                          {
-                moveLeft();
+                moveLeftAff();
             });
             document.getElementById("menuAff-moveRight").addEventListener("click", function()
                                                                           {
-                moveRight();
+                moveRightAff();
             });
-            document.getElementById("menuAff").addEventListener("click", calculateAffSelectedGirl);
+            document.getElementById("menuAff").addEventListener("click", function()
+                                                                {
+                calculateAffSelectedGirl();
+                document.removeEventListener('keyup', KeyUpAff, false);
+                document.addEventListener('keyup', KeyUpAff, false);
+            });
             document.getElementById("menuAffButton").addEventListener("click", function()
                                                                       {
                 launchGiveAff();
@@ -6613,7 +6623,7 @@ function moduleShopActions()
                 {
 
                     AffDialog.close();
-
+                    document.removeEventListener('keyup', KeyUpAff, false);
                 }
                 else
                 {
@@ -6650,7 +6660,11 @@ function moduleShopActions()
                     {
                         document.getElementById("menuAffText").innerHTML = selectedGirl.Name+" "+getTextForUI("menuAffNoNeed","elementText");
                         document.getElementById("menuAffHide").style.display = "none";
-                        AffDialog.showModal();
+                        if (!document.getElementById("AffDialog").open)
+                        {
+                            AffDialog.showModal();
+
+                        }
                     }
                     else
                     {
@@ -6700,7 +6714,11 @@ function moduleShopActions()
                 if (typeof AffDialog.showModal === "function")
                 {
                     document.getElementById("menuAffText").innerHTML = menuText;
-                    AffDialog.showModal();
+                    if (!document.getElementById("AffDialog").open)
+                    {
+                        AffDialog.showModal();
+                    }
+
                 }
                 else
                 {
@@ -6731,7 +6749,8 @@ function moduleShopActions()
             oldTime = newTime;
             if (!document.getElementById("AffDialog").open)
             {
-                logHHAuto('Aff Dialog closed, stopping');
+                logHHAuto('Aff Dialog closed, stopping');$
+                document.removeEventListener('keyup', KeyUpAff, false);
                 return;
             }
 
@@ -6884,12 +6903,12 @@ function moduleShopActions()
 
             GM_addStyle('div#menuExp-moveRight {'
                         + 'border-left-color: blue;}');
-            function moveLeft()
+            function moveLeftExp()
             {
                 $('div.g1 span[nav="left"]').click();
                 prepareExp();
             }
-            function moveRight()
+            function moveRightExp()
             {
                 $('div.g1 span[nav="right"]').click();
                 prepareExp();
@@ -6899,34 +6918,42 @@ function moduleShopActions()
                 document.getElementById("menuExp-moveLeft").style.visibility = "hidden";
                 document.getElementById("menuExp-moveRight").style.visibility = "hidden";
                 giveExp(getSelectGirlID, ExpToGive, potionArray);
+
             }
-            document.addEventListener('keydown', evt => {
-                console.log("test");
-                if (evt.key === 'Enter') {
+            var KeyUpExp = function(evt)
+            {
+                if (evt.key === 'Enter')
+                {
                     launchGiveExp();
                 }
-                else if (evt.keyCode == '37') {
+                else if (evt.keyCode == '37')
+                {
                     // left arrow
-                    moveLeft();
+                    moveLeftExp();
                 }
-                else if (evt.keyCode == '39') {
+                else if (evt.keyCode == '39')
+                {
                     // right arrow
-                    moveRight();
+                    moveRightExp();
                 }
-            });
+            }
+
+
             document.getElementById("menuExp-moveLeft").addEventListener("click", function()
                                                                          {
-                moveLeft();
+                moveLeftExp();
             });
             document.getElementById("menuExp-moveRight").addEventListener("click", function()
                                                                           {
-                moveRight();
+                moveRightExp();
             });
             document.getElementById("menuExp").addEventListener("click", function()
                                                                 {
                 if (typeof ExpDialog.showModal === "function")
                 {
                     prepareExp();
+                document.removeEventListener('keyup', KeyUpExp, false);
+                    document.addEventListener('keyup', KeyUpExp, false);
                     ExpDialog.showModal();
                 }
                 else
@@ -6946,7 +6973,7 @@ function moduleShopActions()
 
                 if (typeof ExpDialog.showModal === "function")
                 {
-
+                    document.removeEventListener('keyup', KeyUpExp, false);
                     ExpDialog.close();
 
                 }
@@ -7043,6 +7070,7 @@ function moduleShopActions()
             if (!document.getElementById("ExpDialog").open)
             {
                 logHHAuto('Exp Dialog closed, stopping');
+                document.removeEventListener('keyup', KeyUpExp, false);
                 return;
             }
 
@@ -8364,7 +8392,7 @@ var RechargeCombat=function()
         is_cheat_click=function(e) {
             return false;
         };
-        console.log($("plus[type='energy_fight']"), canBuyResult.price,canBuyResult.type, canBuyResult.max);
+        //console.log($("plus[type='energy_fight']"), canBuyResult.price,canBuyResult.type, canBuyResult.max);
         hero.recharge($("plus[type='energy_fight']"), canBuyResult.price,canBuyResult.type, canBuyResult.max);
         hero.infos.hc_confirm = hcConfirmValue;
         logHHAuto('Recharged up to '+canBuyResult.max+' fights for '+canBuyResult.price+' kobans.');
@@ -10636,7 +10664,7 @@ function createHHPopUp()
     document.getElementById("HHAutoPopupGlobalClose").addEventListener("click", function(){
         maskHHPopUp();
     });
-    document.addEventListener('keydown', evt => {
+    document.addEventListener('keyup', evt => {
         if (evt.key === 'Escape')
         {
             maskHHPopUp();
