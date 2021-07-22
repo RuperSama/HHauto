@@ -1,18 +1,18 @@
 // ==UserScript==
-// @name         HaremHeroes Automatic++ Beta test
+// @name         HaremHeroes Automatic++
 // @namespace    https://github.com/Roukys/HHauto
-// @version      5.5-beta.13
+// @version      5.5.2
 // @description  Open the menu in HaremHeroes(topright) to toggle AutoControlls. Supports AutoSalary, AutoContest, AutoMission, AutoQuest, AutoTrollBattle, AutoArenaBattle and AutoPachinko(Free), AutoLeagues, AutoChampions and AutoStatUpgrades. Messages are printed in local console.
 // @author       JD and Dorten(a bit), Roukys, cossname, YotoTheOne
-// //@match        http*://nutaku.haremheroes.com/*
-// //@match        http*://*.hentaiheroes.com/*
+// @match        http*://nutaku.haremheroes.com/*
+// @match        http*://*.hentaiheroes.com/*
 // @match        http*://test.hentaiheroes.com/*
-// //@match        http*://*.gayharem.com/*
-// //@match        http*://*.comixharem.com/*
+// @match        http*://*.gayharem.com/*
+// @match        http*://*.comixharem.com/*
 // @grant        GM_addStyle
 // @license      MIT
-// @updateURL   https://github.com/Roukys/HHauto/raw/new-test-beta-with-event/HHAuto.user.js
-// @downloadURL https://github.com/Roukys/HHauto/raw/new-test-beta-with-event/HHAuto.user.js
+// @updateURL    https://github.com/Roukys/HHauto/raw/main/HHAuto.user.js
+// @downloadURL  https://github.com/Roukys/HHauto/raw/main/HHAuto.user.js
 // ==/UserScript==
 
 //CSS Region
@@ -3561,9 +3561,9 @@ function getLeagueOpponentId(opponentsIDList,force=false)
                 var playerDef;
                 let opponentEgo = opponentData.caracs.ego;
                 let opponentAtk = opponentData.caracs.damage
-                let opponentAlpha = opponentData.team["1"];
-                let opponentBeta = opponentData.team["2"];
-                let opponentOmega = opponentData.team["3"];
+                let opponentAlpha = opponentData.team["0"];
+                let opponentBeta = opponentData.team["1"];
+                let opponentOmega = opponentData.team["2"];
                 let opponentName = opponentData.Name;
                 //week 28 new battle modification
                 playerDef = Math.round(getSetHeroInfos('caracs.defense'));
@@ -10232,7 +10232,7 @@ var start = function () {
     + '</div>'
     // _End row of 3 columns_
     +'</div>';
-    $('#contains_all').parent().prepend(sMenu);
+    $('#contains_all').prepend(sMenu);
 
     GM_addStyle(''
                 +'#sMenuButton {'
